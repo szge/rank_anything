@@ -33,18 +33,40 @@ def test_piecewise_interpolates_between_known_points():
     assert d.from_percentile(75).value == pytest.approx(200)
 
 
-def test_piecewise_clamps_outside_range():
-    d = PiecewiseDistribution("x", [(10, 20), (20, 80)])
+def test_piecewise_clamp_tail():
+    d = PiecewiseDistribution("x", [(10, 20), (20, 80)], tail="clamp")
     p = d.to_percentile(5)
     assert p.clamped and p.percentile == 20
     v = d.from_percentile(99)
     assert v.clamped and v.value == 20
 
 
-def test_samples_even_spacing():
-    d = PiecewiseDistribution.from_samples("s", [5, 1, 3, 2, 4])
-    assert d.to_percentile(3).percentile == pytest.approx(50)
-    assert d.to_percentile(3.5).percentile == pytest.approx(62.5)
+def test_hard_bounds_clamp_even_with_auto_tail():
+    # 0% and 100% endpoints are real limits (e.g. a max score): nothing beyond.
+    d = PiecewiseDistribution("sat", [(400, 0), (1600, 100)])
+    assert d.to_percentile(2000).clamped
+    assert d.to_percentile(2000).percentile == 100
+
+
+def test_pareto_upper_tail_keeps_ranking_extreme_values():
+    d = PiecewiseDistribution("inc", [(0, 0), (1_000, 90), (10_000, 99), (100_000, 99.9)])
+    a, b, c = (d.to_percentile(x) for x in (1e6, 1e7, 1e9))
+    assert a.extrapolated and not a.clamped
+    assert 99.9 < a.percentile < b.percentile < c.percentile < 100
+    # Pareto fit from the last two points: each 10x cuts the top share 10x.
+    assert 100 - a.percentile == pytest.approx(0.01)
+    # And the inverse agrees.
+    assert d.from_percentile(a.percentile).value == pytest.approx(1e6)
+
+
+def test_lower_tail_and_exponential_tail():
+    d = PiecewiseDistribution("x", [(-10, 5), (0, 50), (10, 80), (20, 95)])
+    assert d.upper_tail.kind == "pareto" and d.lower_tail.kind == "exponential"
+    lo = d.to_percentile(-20)
+    assert lo.extrapolated and 0 < lo.percentile < 5
+    assert d.from_percentile(lo.percentile).value == pytest.approx(-20)
+    with pytest.raises(DistributionError):
+        PiecewiseDistribution("x", [(-10, 5), (0, 50)], tail="pareto")
 
 
 def test_lower_is_better():

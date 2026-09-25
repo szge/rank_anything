@@ -17,6 +17,7 @@ from .core import (
     Placement,
     PiecewiseDistribution,
     convert,
+    format_percent as fmt_pct,
 )
 from .loader import available, install, load, load_file, user_dir
 from .prompts import PROMPT_TYPES, build_prompt
@@ -39,22 +40,14 @@ examples:
 # --------------------------------------------------------------------------- formatting
 
 
-def fmt_pct(p: float) -> str:
-    """Readable percent with more precision in the tails (99.97%, 0.02%)."""
-    tail = min(p, 100 - p)
-    digits = 1 if tail >= 1 else 2 if tail >= 0.1 else 3
-    text = f"{p:.{digits}f}"
-    if "." in text:
-        text = text.rstrip("0").rstrip(".")
-    return text + "%"
-
-
 def describe(dist: Distribution, pl: Placement, show_position: bool = True) -> str:
     text = dist.format_value(pl.value)
     if show_position and isinstance(dist, LabeledDistribution) and pl.position is not None:
         text += f"  ({pl.position:.0%} of the way through)"
     if pl.clamped:
         text += "  [outside known range, clamped]"
+    elif pl.extrapolated:
+        text += "  [beyond known data, extrapolated]"
     return text
 
 
@@ -101,12 +94,14 @@ def cmd_convert(args) -> int:
             "percentile": placed.percentile,
             "top_percent": placed.top_percent,
             "clamped": placed.clamped,
+            "extrapolated": placed.extrapolated,
             "results": [
                 {
                     "target": c.target.name,
                     "value": c.target_placement.value,
                     "position": c.target_placement.position,
                     "clamped": c.target_placement.clamped,
+                    "extrapolated": c.target_placement.extrapolated,
                 }
                 for _, c in results
             ],

@@ -35,8 +35,12 @@ class Placement:
     value: Value
     # For labeled distributions: how far through the label's band (0..1).
     position: Optional[float] = None
-    # True if the requested value/percentile was outside the known range.
+    # True if the requested value/percentile was outside the known range and
+    # was pinned to the nearest endpoint (hard bound, e.g. a max score).
     clamped: bool = False
+    # True if it was outside the known range and estimated by extending the
+    # distribution's tail beyond the last known points.
+    extrapolated: bool = False
 
     @property
     def top_percent(self) -> float:
@@ -110,6 +114,22 @@ def parse_number(raw: Union[str, float, int]) -> float:
     return float(m.group(1)) * _SUFFIXES.get(m.group(2) or "", 1.0)
 
 
+def format_percent(p: float) -> str:
+    """Readable percent that keeps ~2 significant digits of the distance to
+    0%/100%, so far tails stay distinguishable (99.9988%, 0.0012%)."""
+    tail = min(p, 100 - p)
+    if tail >= 1:
+        digits = 1
+    elif tail > 0:
+        digits = min(12, 1 - math.floor(math.log10(tail)))
+    else:
+        digits = 0
+    text = f"{p:.{digits}f}"
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text + "%"
+
+
 def _fmt_number(x: float) -> str:
     if abs(x) >= 1000:
         return f"{x:,.0f}"
@@ -124,41 +144,92 @@ class NumericDistribution(Distribution):
 
     kind = "numeric"
 
-    def cdf(self, x: float) -> tuple[float, bool]:
+    # cdf/ppf return (result, status) where status is "", "clamped" or "extrapolated".
+    def cdf(self, x: float) -> tuple[float, str]:
         raise NotImplementedError
 
-    def ppf(self, p: float) -> tuple[float, bool]:
+    def ppf(self, p: float) -> tuple[float, str]:
         raise NotImplementedError
 
     def parse_value(self, raw) -> float:
         return parse_number(raw)
 
     def format_value(self, value) -> str:
-        s = _fmt_number(float(value))
         if self.unit == "%":
-            return s + "%"
+            return format_percent(float(value))
+        s = _fmt_number(float(value))
         return f"{s} {self.unit}".strip() if self.unit else s
 
     def to_percentile(self, value, position: float = 0.5) -> Placement:
         x = self.parse_value(value)
-        p, clamped = self.cdf(x)
+        p, status = self.cdf(x)
         rank = p if self.higher_is_better else 100.0 - p
-        return Placement(percentile=rank, value=x, clamped=clamped)
+        return Placement(rank, x, clamped=status == "clamped", extrapolated=status == "extrapolated")
 
     def from_percentile(self, percentile: float) -> Placement:
         p = percentile if self.higher_is_better else 100.0 - percentile
-        x, clamped = self.ppf(p)
-        return Placement(percentile=percentile, value=x, clamped=clamped)
+        x, status = self.ppf(p)
+        return Placement(
+            percentile, x, clamped=status == "clamped", extrapolated=status == "extrapolated"
+        )
+
+
+class _Tail:
+    """Extends a piecewise distribution past its last known point.
+
+    Fitted to the two outermost known points, in terms of the population share
+    beyond x (``mass``: the % above x for the upper tail, below x for the lower):
+
+    * ``pareto``: mass shrinks as a power of x (``mass ∝ x^-a`` upward,
+      ``x^a`` toward 0). Used when values are positive, which suits skewed
+      data like incomes, wealth or follower counts.
+    * ``exponential``: mass shrinks exponentially with distance, for data that
+      can be zero or negative.
+
+    Endpoints at 0% / 100% are hard bounds (e.g. a max score), so there is no
+    tail there and values beyond are clamped instead.
+    """
+
+    def __init__(self, x0: float, m0: float, x1: float, m1: float, kind: str, upper: bool):
+        # (x0, m0) is the outermost point, (x1, m1) the next one in.
+        self.x0, self.m0, self.upper = x0, m0, upper
+        ratio = math.log(m1 / m0)  # > 0: mass grows moving inward
+        if kind == "pareto":
+            self.kind, self.rate = kind, ratio / abs(math.log(x0 / x1))
+        else:
+            self.kind, self.rate = "exponential", ratio / abs(x0 - x1)
+
+    def mass(self, x: float) -> float:
+        if self.kind == "pareto":
+            if x <= 0:
+                return 0.0
+            return self.m0 * (x / self.x0) ** (-self.rate if self.upper else self.rate)
+        d = x - self.x0 if self.upper else self.x0 - x
+        return self.m0 * math.exp(-self.rate * d)
+
+    def value(self, mass: float) -> float:
+        if mass <= 0:
+            return math.inf if self.upper else (0.0 if self.kind == "pareto" else -math.inf)
+        k = math.log(mass / self.m0) / self.rate  # <= 0 in the tail
+        if self.kind == "pareto":
+            return self.x0 * math.exp(-k if self.upper else k)
+        return self.x0 - k if self.upper else self.x0 + k
+
+
+TAIL_KINDS = ("auto", "pareto", "exponential", "clamp")
 
 
 class PiecewiseDistribution(NumericDistribution):
     """Numeric distribution defined by known (value, cdf-percentile) points.
-    Values between points are linearly interpolated."""
+    Values between points are linearly interpolated; values beyond the
+    outermost points follow a fitted tail (see :class:`_Tail`)."""
 
-    def __init__(self, name: str, points: Sequence[tuple[float, float]], **meta):
+    def __init__(self, name: str, points: Sequence[tuple[float, float]], tail: str = "auto", **meta):
         super().__init__(name, **meta)
         if len(points) < 2:
             raise DistributionError(f"{name}: need at least 2 points to interpolate")
+        if tail not in TAIL_KINDS:
+            raise DistributionError(f"{name}: 'tail' must be one of {', '.join(TAIL_KINDS)}")
         pts = sorted((float(x), float(p)) for x, p in points)
         xs = [x for x, _ in pts]
         ps = [p for _, p in pts]
@@ -172,36 +243,70 @@ class PiecewiseDistribution(NumericDistribution):
         if ps[0] == ps[-1]:
             raise DistributionError(f"{name}: all points have the same percentile")
         self.xs, self.ps = xs, ps
+        self.tail = tail
+        self.upper_tail = self._fit_tail(upper=True)
+        self.lower_tail = self._fit_tail(upper=False)
 
-    def cdf(self, x: float) -> tuple[float, bool]:
+    def _fit_tail(self, upper: bool) -> Optional[_Tail]:
+        if self.tail == "clamp":
+            return None
+        pts = list(zip(self.xs, self.ps))
+        if upper:
+            pts = [(x, 100.0 - p) for x, p in reversed(pts)]
+        x0, m0 = pts[0]
+        if m0 <= 0:  # endpoint at 0%/100%: a hard bound
+            return None
+        # Next point inward with strictly more mass and a different value.
+        inner = next(((x, m) for x, m in pts[1:] if m > m0 and x != x0), None)
+        if inner is None:
+            return None
+        kind = self.tail
+        if kind == "auto":
+            kind = "pareto" if x0 > 0 and inner[0] > 0 else "exponential"
+        if kind == "pareto" and (x0 <= 0 or inner[0] <= 0):
+            raise DistributionError(f"{self.name}: a pareto tail needs positive values")
+        return _Tail(x0, m0, inner[0], inner[1], kind, upper)
+
+    def cdf(self, x: float) -> tuple[float, str]:
         if x < self.xs[0]:
-            return self.ps[0], True
+            if self.lower_tail:
+                return self.lower_tail.mass(x), "extrapolated"
+            return self.ps[0], "clamped"
         if x > self.xs[-1]:
-            return self.ps[-1], True
-        return _interp(x, self.xs, self.ps), False
+            if self.upper_tail:
+                return 100.0 - self.upper_tail.mass(x), "extrapolated"
+            return self.ps[-1], "clamped"
+        return _interp(x, self.xs, self.ps), ""
 
-    def ppf(self, p: float) -> tuple[float, bool]:
+    def ppf(self, p: float) -> tuple[float, str]:
         if p < self.ps[0]:
-            return self.xs[0], True
+            if self.lower_tail and p > 0:
+                return self.lower_tail.value(p), "extrapolated"
+            return self.xs[0], "clamped"
         if p > self.ps[-1]:
-            return self.xs[-1], True
-        return _interp(p, self.ps, self.xs), False
+            if self.upper_tail and p < 100:
+                return self.upper_tail.value(100.0 - p), "extrapolated"
+            return self.xs[-1], "clamped"
+        return _interp(p, self.ps, self.xs), ""
 
     @classmethod
     def from_samples(cls, name: str, samples: Sequence[float], **meta):
-        """Empirical distribution: the smallest sample is the 0th percentile, the
-        largest the 100th, evenly spaced in between."""
+        """Empirical distribution: the i-th smallest of n samples sits at the
+        midpoint of its 1/n share, (i + 0.5) / n. This leaves room below the
+        smallest and above the largest sample for the tails."""
         xs = sorted(float(v) for v in samples)
         if len(xs) < 2:
             raise DistributionError(f"{name}: need at least 2 samples")
-        n = len(xs)
-        return cls(name, [(x, 100.0 * i / (n - 1)) for i, x in enumerate(xs)], **meta)
+        return cls.from_weighted(name, [(x, 1.0) for x in xs], **meta)
 
     @classmethod
     def from_weighted(cls, name: str, weights: Sequence[tuple[float, float]], **meta):
         """Histogram of numeric values -> each value sits at the midpoint of its
         cumulative share of the population."""
-        items = sorted((float(v), float(w)) for v, w in weights)
+        merged: dict[float, float] = {}
+        for v, w in weights:
+            merged[float(v)] = merged.get(float(v), 0.0) + float(w)
+        items = sorted(merged.items())
         total = sum(w for _, w in items)
         if total <= 0 or any(w < 0 for _, w in items):
             raise DistributionError(f"{name}: frequencies must be non-negative, sum > 0")
@@ -220,13 +325,13 @@ class NormalDistribution(NumericDistribution):
         self.mean, self.std = float(mean), float(std)
         self._dist = NormalDist(self.mean, self.std)
 
-    def cdf(self, x: float) -> tuple[float, bool]:
-        return 100.0 * self._dist.cdf(x), False
+    def cdf(self, x: float) -> tuple[float, str]:
+        return 100.0 * self._dist.cdf(x), ""
 
-    def ppf(self, p: float) -> tuple[float, bool]:
-        eps = 1e-9
-        clamped = p <= 0 or p >= 100
-        return self._dist.inv_cdf(_clamp(p / 100.0, eps, 1 - eps)), clamped
+    def ppf(self, p: float) -> tuple[float, str]:
+        eps = 1e-15
+        status = "clamped" if p / 100.0 <= eps or p / 100.0 >= 1 - eps else ""
+        return self._dist.inv_cdf(_clamp(p / 100.0, eps, 1 - eps)), status
 
 
 class LogNormalDistribution(NumericDistribution):
@@ -239,15 +344,15 @@ class LogNormalDistribution(NumericDistribution):
         self.median, self.sigma = float(median), float(sigma)
         self._dist = NormalDist(math.log(self.median), self.sigma)
 
-    def cdf(self, x: float) -> tuple[float, bool]:
+    def cdf(self, x: float) -> tuple[float, str]:
         if x <= 0:
-            return 0.0, x < 0
-        return 100.0 * self._dist.cdf(math.log(x)), False
+            return 0.0, "clamped" if x < 0 else ""
+        return 100.0 * self._dist.cdf(math.log(x)), ""
 
-    def ppf(self, p: float) -> tuple[float, bool]:
-        eps = 1e-9
-        clamped = p <= 0 or p >= 100
-        return math.exp(self._dist.inv_cdf(_clamp(p / 100.0, eps, 1 - eps))), clamped
+    def ppf(self, p: float) -> tuple[float, str]:
+        eps = 1e-15
+        status = "clamped" if p / 100.0 <= eps or p / 100.0 >= 1 - eps else ""
+        return math.exp(self._dist.inv_cdf(_clamp(p / 100.0, eps, 1 - eps))), status
 
 
 # --------------------------------------------------------------------------- labeled

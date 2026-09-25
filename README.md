@@ -171,8 +171,37 @@ When the value you ask about isn't one of the known points, the tool
   of the way through.
 - **Parametric distributions** (`normal`, `lognormal`) use the exact CDF.
 
-A value outside the known data range is clamped to the nearest end and marked
-`[outside known range, clamped]`.
+### Values beyond the known data
+
+Numeric data only covers a limited range. For example, the highest income
+point is the top 0.01% cutoff, C$3.49M. Past the outermost known points, the
+tool **extends the distribution's tail** instead of stopping. It fits the tail
+to the last two known points, so extreme values still get different
+percentiles:
+
+```console
+$ rank-anything convert 12M --from canada-income --to lol-rank
+12,000,000 CAD  [beyond known data, extrapolated] in Canadian individual income (CAD, before tax)
+  = better than 99.9988% (top 0.0012%)
+  ≈ Challenger  (95% of the way through) in League of Legends solo queue rank
+
+$ rank-anything convert 1.2B --from canada-income --to lol-rank
+1,200,000,000 CAD  [beyond known data, extrapolated] in Canadian individual income (CAD, before tax)
+  = better than 99.99999962% (top 0.00000038%)
+  ≈ Challenger  (100% of the way through) in League of Legends solo queue rank
+```
+
+Which tail is used depends on the data (the `"tail"` field in the JSON):
+
+| `tail` | Behaviour past the last point | Used when (`"auto"`, the default) |
+|---|---|---|
+| `pareto` | the share beyond *x* falls off as a power of *x* (a power law). This suits incomes, wealth, follower counts. | the outermost values are positive |
+| `exponential` | the share beyond *x* falls off exponentially with distance | values can be zero or negative |
+| `clamp` | pinned to the endpoint | an endpoint is at 0% or 100%, which marks a hard limit (e.g. SAT 1600) |
+
+Clamped results are marked `[outside known range, clamped]` and extrapolated
+ones `[beyond known data, extrapolated]`. Extrapolated results are estimates:
+the further they are from the data, the less reliable they get.
 
 ## Adding your own distribution
 
@@ -189,7 +218,8 @@ and `data` holds the numbers.
   "unit": "USD",
   "source": "https://...",
   "date": "2026",
-  "higher_is_better": true        // numeric only: set false for e.g. race times
+  "higher_is_better": true,       // numeric only: set false for e.g. race times
+  "tail": "auto"                  // numeric points only: auto | pareto | exponential | clamp
 }
 ```
 
@@ -232,8 +262,10 @@ next label begins.
 
 ### 3. `samples`: a list of numbers
 
-Give the raw observations. The smallest is the 0th percentile, the largest
-the 100th, and everything in between is interpolated.
+Give the raw observations. With *n* samples, each one is placed at the middle
+of its 1/*n* share of the population, so the smallest of 10 samples is the 5th
+percentile and the largest is the 95th. Values in between are interpolated, and
+values past the smallest or largest sample follow the fitted tail.
 
 ```json
 { "name": "team-salaries", "type": "samples", "unit": "USD",

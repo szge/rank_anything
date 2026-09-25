@@ -9,7 +9,8 @@ JSON format (see README for full details)::
       "data": ...,
       "unit": "CAD", "source": "...", "date": "...", "description": "...",
       "higher_is_better": true,          # numeric only
-      "percentile_kind": "below" | "top" # "percentile" type only
+      "percentile_kind": "below" | "top", # "percentile" type only
+      "tail": "auto" | "pareto" | "exponential" | "clamp"  # numeric point data only
     }
 """
 
@@ -84,11 +85,15 @@ def from_dict(spec: dict, default_name: str = "custom") -> Distribution:
     meta = {k: str(spec[k]) for k in META_KEYS if spec.get(k) is not None}
     meta["higher_is_better"] = bool(spec.get("higher_is_better", True))
     data = spec.get("data")
+    # How to extend numeric point data past its outermost known values.
+    tail = {"tail": str(spec.get("tail", "auto"))}
 
     if dtype == "samples":
         if not isinstance(data, list):
             raise DistributionError(f"{name}: 'samples' data must be a list of numbers")
-        return PiecewiseDistribution.from_samples(name, [parse_number(v) for v in data], **meta)
+        return PiecewiseDistribution.from_samples(
+            name, [parse_number(v) for v in data], **tail, **meta
+        )
 
     if dtype == "normal":
         params = data if isinstance(data, dict) else spec
@@ -107,7 +112,7 @@ def from_dict(spec: dict, default_name: str = "custom") -> Distribution:
     if dtype == "frequency":
         if numeric_keys:
             return PiecewiseDistribution.from_weighted(
-                name, [(parse_number(k), f) for k, f in nums], **meta
+                name, [(parse_number(k), f) for k, f in nums], **tail, **meta
             )
         meta.pop("higher_is_better")
         return LabeledDistribution.from_frequencies(name, nums, **meta)
@@ -119,7 +124,7 @@ def from_dict(spec: dict, default_name: str = "custom") -> Distribution:
     if kind == "top":
         nums = [(k, 100.0 - p) for k, p in nums]
     if numeric_keys:
-        return PiecewiseDistribution(name, [(parse_number(k), p) for k, p in nums], **meta)
+        return PiecewiseDistribution(name, [(parse_number(k), p) for k, p in nums], **tail, **meta)
     meta.pop("higher_is_better")
     return LabeledDistribution.from_starts(name, nums, **meta)
 
@@ -146,10 +151,10 @@ def _user_files() -> dict[str, Path]:
 # Pseudo-distributions usable anywhere a name is accepted.
 PSEUDO = {
     "percentile": lambda: PiecewiseDistribution(
-        "percentile", [(0, 0), (100, 100)], title="percentile rank", unit="%"
+        "percentile", [(0, 0), (100, 100)], tail="clamp", title="percentile rank", unit="%"
     ),
     "top": lambda: PiecewiseDistribution(
-        "top", [(0, 0), (100, 100)], title="top-X% rank", unit="%", higher_is_better=False
+        "top", [(0, 0), (100, 100)], tail="clamp", title="top-X% rank", unit="%", higher_is_better=False
     ),
 }
 

@@ -58,7 +58,7 @@ def test_add_validate_remove(tmp_path, monkeypatch, capsys):
     assert run(capsys, "add", str(f))[0] == 0
     assert run(capsys, "add", str(f))[0] == 2  # already exists
     code, out, _ = run(capsys, "convert", "3", "-f", "mine", "-t", "percentile")
-    assert code == 0 and "66.7%" in out
+    assert code == 0 and "62.5%" in out
     assert run(capsys, "remove", "mine")[0] == 0
 
 
@@ -67,6 +67,16 @@ def test_json_path_directly(capsys):
     assert code == 0 and "better than 62%" in out  # lower time is better
 
 
-@pytest.mark.parametrize("p,s", [(50, "50%"), (81.48, "81.5%"), (99.9, "99.9%"), (99.977, "99.977%"), (0.38, "0.38%")])
+@pytest.mark.parametrize("p,s", [
+    (50, "50%"), (81.48, "81.5%"), (99.9, "99.9%"), (99.977, "99.977%"), (0.38, "0.38%"),
+    (99.998841, "99.9988%"), (99.99999962, "99.99999962%"), (100, "100%"),
+])
 def test_fmt_pct(p, s):
     assert fmt_pct(p) == s
+
+
+def test_extreme_values_stay_distinct(capsys):
+    outs = [run(capsys, "convert", v, "-f", "canada-income", "-t", "lol-rank")[1]
+            for v in ("12000000", "1200000000")]
+    assert outs[0] != outs[1]
+    assert all("extrapolated" in o for o in outs)
