@@ -1,0 +1,9 @@
+{
+  "name": "us-male-height",
+  "title": "Adult US male height (cm)",
+  "description": "Approximated as normal with mean 175.4 cm and SD 7.6 cm.",
+  "type": "normal",
+  "unit": "cm",
+  "source": "CDC NHANES anthropometric reference data (approximate)",
+  "data": { "mean": 175.4, "std": 7.6 }
+}

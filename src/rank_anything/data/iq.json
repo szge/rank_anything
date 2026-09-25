@@ -1,0 +1,9 @@
+{
+  "name": "iq",
+  "title": "IQ score",
+  "description": "Modern IQ tests are normed to mean 100, standard deviation 15.",
+  "type": "normal",
+  "unit": "IQ",
+  "source": "Test norming convention (WAIS / Stanford-Binet)",
+  "data": { "mean": 100, "std": 15 }
+}

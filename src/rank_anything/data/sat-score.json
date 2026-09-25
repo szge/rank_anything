@@ -1,0 +1,14 @@
+{
+  "name": "sat-score",
+  "title": "SAT total score (400-1600)",
+  "description": "College Board SAT User Percentiles (share of test takers scoring below). 400 and 1600 are the scale endpoints.",
+  "type": "percentile",
+  "percentile_kind": "below",
+  "unit": "points",
+  "source": "https://www.larrylearns.com/blog/sat-percentiles (College Board SAT User Percentiles)",
+  "date": "2026",
+  "data": {
+    "400": 0, "800": 17, "900": 32, "1000": 47, "1050": 55, "1100": 62,
+    "1200": 75, "1300": 85, "1400": 93, "1500": 97, "1600": 100
+  }
+}

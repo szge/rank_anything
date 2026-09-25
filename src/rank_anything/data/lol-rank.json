@@ -1,0 +1,18 @@
+{
+  "name": "lol-rank",
+  "title": "League of Legends solo queue rank",
+  "description": "Share of ranked solo queue players in each tier/division, all regions. Ordered worst to best.",
+  "type": "frequency",
+  "source": "https://www.esportstales.com/league-of-legends/rank-distribution-percentage-of-players-by-tier",
+  "date": "2026-08",
+  "data": {
+    "Iron IV": 0.38, "Iron III": 0.42, "Iron II": 0.9, "Iron I": 1.7,
+    "Bronze IV": 4.5, "Bronze III": 3.7, "Bronze II": 4.0, "Bronze I": 3.6,
+    "Silver IV": 6.1, "Silver III": 5.3, "Silver II": 5.4, "Silver I": 4.3,
+    "Gold IV": 8.3, "Gold III": 6.0, "Gold II": 5.4, "Gold I": 3.8,
+    "Platinum IV": 7.4, "Platinum III": 4.6, "Platinum II": 3.8, "Platinum I": 2.6,
+    "Emerald IV": 5.2, "Emerald III": 2.8, "Emerald II": 2.0, "Emerald I": 2.9,
+    "Diamond IV": 1.6, "Diamond III": 0.64, "Diamond II": 1.1, "Diamond I": 0.71,
+    "Master": 0.83, "Grandmaster": 0.054, "Challenger": 0.023
+  }
+}

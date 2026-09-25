@@ -1,0 +1,26 @@
+{
+  "name": "canada-income",
+  "title": "Canadian individual income (CAD, before tax)",
+  "description": "Individual total income percentiles for Canadian tax filers, 2023. Top-end cutoffs (99th, 99.9th, 99.99th) are official Statistics Canada figures; lower percentiles are approximations anchored on the ~C$45k national median.",
+  "type": "percentile",
+  "percentile_kind": "below",
+  "unit": "CAD",
+  "source": "https://www150.statcan.gc.ca/n1/daily-quotidien/251031/dq251031b-eng.htm (top cutoffs); lower percentiles approximate",
+  "date": "2023",
+  "data": {
+    "0": 0,
+    "12000": 10,
+    "20500": 20,
+    "29000": 30,
+    "37000": 40,
+    "45000": 50,
+    "54000": 60,
+    "65000": 70,
+    "81000": 80,
+    "108000": 90,
+    "140000": 95,
+    "293800": 99,
+    "930100": 99.9,
+    "3487600": 99.99
+  }
+}

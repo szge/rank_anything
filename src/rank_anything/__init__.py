@@ -21,7 +21,7 @@ def convert(value, source, target, position: float = 0.5) -> Conversion:
     Distribution objects.
 
     >>> convert(90, "percentile", "lol-rank").target_placement.value
-    'Emerald IV'
+    'Emerald III'
     """
     return _convert(value, load(source), load(target), position=position)
 

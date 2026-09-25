@@ -1,0 +1,19 @@
+{
+  "name": "valorant-rank",
+  "title": "Valorant competitive rank",
+  "description": "Share of competitive players in each rank, V26 Act 5. Ordered worst to best.",
+  "type": "frequency",
+  "source": "https://www.esportstales.com/valorant/rank-distribution-and-percentage-of-players-by-tier",
+  "date": "2026-09",
+  "data": {
+    "Iron 1": 0.57, "Iron 2": 1.54, "Iron 3": 2.56,
+    "Bronze 1": 5.17, "Bronze 2": 5.75, "Bronze 3": 4.80,
+    "Silver 1": 7.62, "Silver 2": 7.06, "Silver 3": 5.98,
+    "Gold 1": 8.70, "Gold 2": 7.58, "Gold 3": 5.84,
+    "Platinum 1": 7.62, "Platinum 2": 5.83, "Platinum 3": 4.11,
+    "Diamond 1": 5.11, "Diamond 2": 3.80, "Diamond 3": 2.64,
+    "Ascendant 1": 3.24, "Ascendant 2": 2.01, "Ascendant 3": 1.07,
+    "Immortal 1": 0.98, "Immortal 2": 0.22, "Immortal 3": 0.17,
+    "Radiant": 0.05
+  }
+}

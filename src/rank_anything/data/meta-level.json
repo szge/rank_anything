@@ -1,0 +1,18 @@
+{
+  "name": "meta-level",
+  "title": "Meta software engineering level",
+  "description": "Rough share of Meta software engineers at or above each level (E3 new grad ... E9 distinguished). Community estimate, not official data.",
+  "type": "percentile",
+  "percentile_kind": "top",
+  "source": "Community estimates (levels.fyi / Blind discussions); approximate",
+  "date": "2026",
+  "data": {
+    "E3": 100,
+    "E4": 72,
+    "E5": 42,
+    "E6": 15,
+    "E7": 4,
+    "E8": 0.9,
+    "E9": 0.2
+  }
+}
