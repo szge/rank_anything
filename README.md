@@ -1,10 +1,8 @@
-# rank_anything
+# Rank Anything!
 
 **What League of Legends rank is your income?**
 
-`rank_anything` converts a value from one statistical distribution into the
-equivalent value in another: your income in CAD, your level at Meta, your SAT
-score, your Valorant rank. It works by matching percentiles.
+`rank_anything` converts a value from one statistical distribution into the equivalent value in another: your income in CAD, your SAT score, your Valorant rank. It works by matching percentiles.
 
 ```console
 $ rank-anything convert 120k --from canada-income --to lol-rank
