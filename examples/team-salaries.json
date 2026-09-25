@@ -1,0 +1,8 @@
+{
+  "name": "team-salaries",
+  "title": "My team's salaries (USD)",
+  "description": "Example of the 'samples' format: a raw list of numbers.",
+  "type": "samples",
+  "unit": "USD",
+  "data": [68000, 72000, 79000, 85000, 88000, 91000, 97000, 104000, 112000, 125000, 150000, 210000]
+}

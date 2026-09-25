@@ -135,6 +135,8 @@ class NumericDistribution(Distribution):
 
     def format_value(self, value) -> str:
         s = _fmt_number(float(value))
+        if self.unit == "%":
+            return s + "%"
         return f"{s} {self.unit}".strip() if self.unit else s
 
     def to_percentile(self, value, position: float = 0.5) -> Placement:
@@ -253,11 +255,19 @@ class LogNormalDistribution(NumericDistribution):
 _ROMAN = {"i": "1", "ii": "2", "iii": "3", "iv": "4", "v": "5"}
 
 
+def _label_tokens(label: str) -> list[str]:
+    tokens = re.findall(r"[a-z]+|[0-9]+", str(label).lower())
+    return [_ROMAN.get(t, t) if i > 0 else t for i, t in enumerate(tokens)]
+
+
 def normalize_label(label: str) -> str:
     """Case/spacing-insensitive key; 'Gold II' == 'gold 2' == 'GOLD-2'."""
-    tokens = re.findall(r"[a-z0-9]+", str(label).lower())
-    tokens = [_ROMAN.get(t, t) if i > 0 else t for i, t in enumerate(tokens)]
-    return "".join(tokens)
+    return "".join(_label_tokens(label))
+
+
+def _token_prefix_match(query: list[str], label: list[str]) -> bool:
+    """'plat 2' matches 'Platinum II': each query token prefixes a label token."""
+    return 0 < len(query) <= len(label) and all(l.startswith(q) for q, l in zip(query, label))
 
 
 @dataclass
@@ -279,6 +289,7 @@ class LabeledDistribution(Distribution):
             raise DistributionError(f"{name}: no labels given")
         self.bands = list(bands)
         self._index: dict[str, int] = {}
+        self._tokens = [_label_tokens(b.label) for b in self.bands]
         for i, b in enumerate(self.bands):
             if b.hi < b.lo:
                 raise DistributionError(f"{name}: label {b.label!r} has negative width")
@@ -318,11 +329,19 @@ class LabeledDistribution(Distribution):
     def labels(self) -> list[str]:
         return [b.label for b in self.bands]
 
+    def _prefix_matches(self, label: str) -> list[int]:
+        query = _label_tokens(label)
+        key = "".join(query)
+        return [
+            i for i, (k, toks) in enumerate(zip(self._index, self._tokens))
+            if (key and k.startswith(key)) or _token_prefix_match(query, toks)
+        ]
+
     def find(self, label: str) -> Band:
         key = normalize_label(label)
         if key in self._index:
             return self.bands[self._index[key]]
-        matches = [b for k, b in zip(self._index, self.bands) if k.startswith(key)] if key else []
+        matches = [self.bands[i] for i in self._prefix_matches(label)]
         if len(matches) == 1:
             return matches[0]
         hint = (
@@ -332,13 +351,26 @@ class LabeledDistribution(Distribution):
         )
         raise DistributionError(f"{self.name}: unknown label {label!r}.{hint}")
 
+    def find_span(self, label: str) -> Band:
+        """Like :meth:`find`, but a prefix matching several *adjacent* labels
+        (e.g. 'gold' -> Gold IV..Gold I) returns their combined band."""
+        if normalize_label(label) not in self._index:
+            idx = self._prefix_matches(label)
+            if len(idx) > 1 and idx == list(range(idx[0], idx[-1] + 1)):
+                first, last = self.bands[idx[0]], self.bands[idx[-1]]
+                return Band(f"{first.label} – {last.label}", first.lo, last.hi)
+        return self.find(label)
+
     def parse_value(self, raw) -> str:
-        return self.find(str(raw)).label
+        return self.find_span(str(raw)).label
+
+    def format_value(self, value) -> str:
+        return str(value)
 
     def to_percentile(self, value, position: float = 0.5) -> Placement:
         if not 0 <= position <= 1:
             raise DistributionError("position must be between 0 and 1")
-        b = self.find(str(value))
+        b = self.find_span(str(value))
         return Placement(b.lo + position * (b.hi - b.lo), b.label, position)
 
     def from_percentile(self, percentile: float) -> Placement:

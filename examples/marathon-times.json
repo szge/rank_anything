@@ -1,0 +1,10 @@
+{
+  "name": "marathon-times",
+  "title": "Marathon finish time (minutes)",
+  "description": "Example of a 'lower is better' distribution. Illustrative finish-time percentiles for a large city marathon.",
+  "type": "percentile",
+  "percentile_kind": "below",
+  "unit": "min",
+  "higher_is_better": false,
+  "data": {"150": 0.1, "180": 3, "210": 15, "240": 38, "270": 60, "300": 78, "330": 89, "360": 95, "420": 99, "480": 100}
+}

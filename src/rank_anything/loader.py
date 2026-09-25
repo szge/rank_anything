@@ -146,10 +146,10 @@ def _user_files() -> dict[str, Path]:
 # Pseudo-distributions usable anywhere a name is accepted.
 PSEUDO = {
     "percentile": lambda: PiecewiseDistribution(
-        "percentile", [(0, 0), (100, 100)], title="Percentile (better than X%)"
+        "percentile", [(0, 0), (100, 100)], title="percentile rank", unit="%"
     ),
     "top": lambda: PiecewiseDistribution(
-        "top", [(0, 0), (100, 100)], title="Top X%", unit="%", higher_is_better=False
+        "top", [(0, 0), (100, 100)], title="top-X% rank", unit="%", higher_is_better=False
     ),
 }
 

@@ -1,0 +1,8 @@
+{
+  "name": "chess-ratings",
+  "title": "Online chess rating (illustrative)",
+  "description": "Example of the 'frequency' format with NUMERIC keys: a histogram of rating buckets. Illustrative numbers.",
+  "type": "frequency",
+  "unit": "Elo",
+  "data": {"400": 12, "600": 15, "800": 17, "1000": 16, "1200": 13, "1400": 10, "1600": 7, "1800": 5, "2000": 3, "2200": 1.5, "2500": 0.5}
+}
