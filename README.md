@@ -177,6 +177,7 @@ the data and the source of any one.
 | `r6-rank` | Copper 5 … Champion | [Esports Tales](https://www.esportstales.com/rainbow-six-siege/seasonal-rank-distribution-and-percentage-of-players) (official Ubisoft data), Y10S3 |
 | `lichess-blitz`, `lichess-rapid` | rating | [Lichess](https://lichess.org/stat/rating/distribution/blitz) live stats: every player active that week |
 | `chesscom-rapid` | rating | **approximate**: community-reported ranges; Chess.com doesn't publish its distribution |
+| `github-stars` | stars | [GitHub search](https://docs.github.com/en/rest/search/search) counts of repos with ≥ N stars; population = the 32M public repos with at least 1 star |
 | `monkeytype-wpm` | words per minute | [Monkeytype API](https://api.monkeytype.com/public/speedHistogram?language=english&mode=time&mode2=60): 60-second English personal bests. People who use a typing-test site type faster than average. |
 
 **Fitness and body**
@@ -193,16 +194,31 @@ the data and the source of any one.
 | Name | Values | Source |
 |---|---|---|
 | `us-income` | USD | US individual income (adjusted gross income on individual tax returns), 2023. Median and up: [IRS Table 4.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-tax-rate-and-income-percentile) percentile floors, to the top 0.001%. Below median: [IRS Table 1.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-size-of-adjusted-gross-income). Method: `scripts/build_us_income.py` |
+| `us-net-worth` | USD | Household net worth, 2022 [Survey of Consumer Finances](https://www.federalreserve.gov/econres/scfindex.htm) (Federal Reserve): weighted percentiles computed from the public microdata. Method: `scripts/build_net_worth.py` |
+| `canada-net-worth` | CAD | Family net worth, 2023 [Survey of Financial Security](https://www150.statcan.gc.ca/n1/pub/13m0006x/13m0006x2021001-eng.htm) (Statistics Canada) microdata; top 1% from the [Parliamentary Budget Officer](https://www.pbo-dpb.ca/en/publications/RP-2526-009-S--estimating-top-tail-family-wealth-distribution-in-canada-2025-update--estimation-extremite-superieure-distribution-patrimoine-familial-canada-mises-jour-2025) |
+| `credit-score` | 300–850 | FICO Score 8 by range, [Experian](https://www.experian.com/blogs/ask-experian/what-is-the-average-credit-score-in-the-u-s/), Sep 2025 (only 5 ranges published) |
 | `canada-income` | CAD | [Statistics Canada](https://www150.statcan.gc.ca/n1/daily-quotidien/251031/dq251031b-eng.htm) 2023 top-1%/0.1%/0.01% cutoffs; lower percentiles are approximate |
 | `meta-level` | E3 … E9 | **rough community estimate** (not official) |
 | `sat-score` | 400–1600 | College Board SAT User Percentiles (via [Larry Learns](https://www.larrylearns.com/blog/sat-percentiles)) |
+| `act-score` | 1–36 | [ACT National Ranks](https://www.act.org/content/act/en/products-and-services/the-act/scores/national-ranks.html), Composite, 2026–27 |
+| `gre-verbal`, `gre-quant` | 130–170 | [ETS GRE interpretive data](https://www.ets.org/pdfs/gre/gre-guide-table-1a.pdf), Jul 2022–Jun 2025 |
+| `lsat-score` | 120–180 | [LSAC percentile table](https://www.lsac.org/data-research/data/lsat-percentiles), 2023–2026 |
+| `mcat-score` | 472–528 | [AAMC percentile ranks](https://students-residents.aamc.org/media/19701/download), in effect May 2026–Apr 2027 |
 | `iq` | normal(100, 15) | Standard test norming |
 
 **Pseudo-distributions:** `percentile` ("better than X%") and `top` ("top X%").
 
-**Refreshing live data.** `python scripts/build_live_stats.py` fetches the
-current Lichess and Monkeytype numbers. The other sources are fixed
-snapshots; their `source` field says where to look for newer figures.
+**Refreshing data.** The scripts in `scripts/` rebuild datasets from their
+sources. `build_live_stats.py` fetches Lichess and Monkeytype,
+`build_github_stars.py` queries GitHub search, and `build_net_worth.py`
+recomputes net worth from the Fed and Statistics Canada microdata.
+`build_test_scores.py` and `build_us_income.py` hold the published tables.
+Every other dataset is a fixed snapshot whose `source` field says where to
+look for newer figures.
+
+Test scores use "% of test takers scoring below", so a percentile reads as
+"better than X%". ACT and MCAT publish "% at or below", which is converted
+exactly. Scores outside a test's scale are clamped.
 
 **Leaderboards (speedruns etc.).** There's no general speedrun distribution,
 because every game and category has its own leaderboard. Export a leaderboard's
@@ -484,6 +500,4 @@ pytest
 ## Caveats
 
 The results are only as good as the input data. Game-rank shares change every
-season, the `meta-level` numbers are estimates, and comparing two different
-populations by percentile is a fun heuristic rather than a statement about
-skill. Keep that in mind when you tell your friends what rank your salary is.
+season.

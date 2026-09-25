@@ -1,0 +1,19 @@
+{
+  "name": "credit-score",
+  "title": "US credit score (FICO Score 8)",
+  "description": "Share of US consumers in each FICO Score 8 range, Experian data, September 2025 (average 713). Only five ranges are published, so values inside a range are interpolated.",
+  "type": "percentile",
+  "percentile_kind": "below",
+  "tail": "clamp",
+  "unit": "FICO",
+  "source": "https://www.experian.com/blogs/ask-experian/what-is-the-average-credit-score-in-the-u-s/",
+  "date": "2025-09",
+  "data": {
+    "300": 0,
+    "580": 14.7,
+    "670": 29.6,
+    "740": 49.7,
+    "800": 77.2,
+    "850": 100
+  }
+}

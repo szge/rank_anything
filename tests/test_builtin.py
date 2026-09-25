@@ -10,6 +10,8 @@ def test_every_distribution_loads_and_round_trips(name):
     d = ra.load(name)
     for p in (1, 25, 50, 75, 99):
         placed = d.from_percentile(p)
+        if placed.clamped:  # e.g. 11% of GRE Quant takers score 170: no value above 89%
+            continue
         back = d.to_percentile(placed.value, position=placed.position or 0.5)
         assert back.percentile == pytest.approx(p, abs=1e-6)
 
@@ -61,3 +63,24 @@ def test_live_stats_are_sane():
         assert d.from_percentile(10).value < d.from_percentile(50).value < d.from_percentile(90).value
     assert 1000 < ra.convert(50, "percentile", "lichess-blitz").target_placement.value < 2000
     assert 40 < ra.convert(50, "percentile", "monkeytype-wpm").target_placement.value < 120
+
+
+def test_official_test_score_tables():
+    # "At or below" tables are converted to "% below": ACT 22 is 72 at-or-below, so 68 below.
+    assert ra.percentile(22, "act-score") == pytest.approx(68)
+    assert ra.percentile(508, "mcat-score") == pytest.approx(71)
+    assert ra.percentile(154, "lsat-score") == pytest.approx(50.43)
+    assert ra.percentile(170, "gre-quant") == pytest.approx(89)
+    assert ra.percentile(130, "gre-verbal") == pytest.approx(0)
+    # Scores off the scale are clamped, not extrapolated.
+    assert ra.load("lsat-score").to_percentile(190).clamped
+    assert ra.percentile(740, "credit-score") == pytest.approx(49.7)
+
+
+def test_net_worth_and_github_stars():
+    assert ra.percentile(192_700, "us-net-worth") == pytest.approx(50)
+    assert ra.percentile(519_450, "canada-net-worth") == pytest.approx(50)
+    assert ra.percentile("7.4M", "canada-net-worth") == pytest.approx(99)  # PBO anchor
+    assert ra.percentile(-5_000, "us-net-worth") < 10  # debts > assets
+    assert ra.percentile(1, "github-stars") == 0  # population: repos with 1+ stars
+    assert ra.percentile(10, "github-stars") < ra.percentile(1000, "github-stars") < 100

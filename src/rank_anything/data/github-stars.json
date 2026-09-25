@@ -1,0 +1,31 @@
+{
+  "name": "github-stars",
+  "title": "GitHub repository stars",
+  "description": "Stars on public GitHub repositories with at least 1 star (32,196,796 repos, forks excluded), from GitHub search counts on 2026-09-25. 29 repos have 200,000+ stars.",
+  "type": "percentile",
+  "percentile_kind": "below",
+  "interpolation": "loglog",
+  "unit": "stars",
+  "source": "https://api.github.com/search/repositories?q=stars:>=N",
+  "date": "2026-09-25",
+  "data": {
+    "1": 0.0,
+    "2": 61.53858,
+    "3": 74.94127,
+    "5": 84.26317,
+    "10": 91.0594,
+    "20": 94.75914,
+    "50": 97.41764,
+    "100": 98.50641,
+    "200": 99.15229,
+    "500": 99.61612,
+    "1000": 99.79779,
+    "2000": 99.8964,
+    "5000": 99.96084,
+    "10000": 99.98263,
+    "20000": 99.99293,
+    "50000": 99.99846,
+    "100000": 99.99961,
+    "200000": 99.99991
+  }
+}
