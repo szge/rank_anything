@@ -3,7 +3,7 @@
  * commit bd8187a): CLI output byte for byte, and API results over percentile
  * grids, label matching, parsing, formatting and importers.
  *
- * Intentional differences from the recording: the version (0.1.0 -> 0.2.0),
+ * Intentional differences from the recording: the version (0.1.0 -> the current VERSION),
  * and (updated in the fixture) us-income's description, which now points at
  * scripts/build_us_income.ts, and the help and usage text for `convert --raw`
  * and the `percentile` command, which were added later.
@@ -29,6 +29,7 @@ import { dumpSpec, numbersFromTable, numbersFromText } from "../src/importers.ts
 import { load } from "../src/node.ts";
 import { toFixed } from "../src/text.ts";
 import { erf, normalCdf, normalInvCdf } from "../src/stats.ts";
+import { VERSION } from "../src/version.ts";
 
 type Num = number | { nonfinite: string };
 interface CliCase { argv: string[]; code: number; stdout: string; stderr: string; json?: boolean }
@@ -125,7 +126,7 @@ describe("CLI output matches reference outputs", () => {
     "usage/help: %s",
     (_, c) => {
       const out = run(c.argv);
-      expect(out.stdout).toBe(c.stdout.replace("rank-anything 0.1.0", "rank-anything 0.2.0"));
+      expect(out.stdout).toBe(c.stdout.replace("rank-anything 0.1.0", `rank-anything ${VERSION}`));
       expect(out.stderr).toBe(c.stderr);
       expect(out.code).toBe(c.code);
     },

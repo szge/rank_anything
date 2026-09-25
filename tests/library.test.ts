@@ -3,10 +3,15 @@ import { describe, expect, test } from "vitest";
 import * as core from "../src/core.ts";
 import * as ra from "../src/index.ts";
 import { BUILTINS_FILE, renderBuiltins } from "../scripts/gen_builtins.ts";
+import { VERSION_FILE, renderVersion } from "../scripts/sync_version.ts";
 import { approx } from "./helpers.ts";
 
 test("src/builtins.ts is in sync with data/ (run `npm run gen`)", () => {
   expect(readFileSync(BUILTINS_FILE, "utf8")).toBe(renderBuiltins());
+});
+
+test("src/version.ts is in sync with package.json (run `node scripts/sync_version.ts`)", () => {
+  expect(readFileSync(VERSION_FILE, "utf8")).toBe(renderVersion());
 });
 
 test("README API example", () => {

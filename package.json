@@ -54,7 +54,7 @@
     "check": "npm run typecheck && npm test",
     "prepare": "npm run build",
     "prepublishOnly": "npm run check",
-    "version": "node -e \"const v=require('./package.json').version;require('fs').writeFileSync('src/version.ts',`export const VERSION = \\\"${v}\\\";\\n`)\" && git add src/version.ts"
+    "version": "node scripts/sync_version.ts && git add src/version.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
