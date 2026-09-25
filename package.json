@@ -1,6 +1,6 @@
 {
   "name": "rank-anything",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Convert values between statistical distributions: what LoL rank is your income?",
   "license": "MIT",
   "author": "Jonathan Chiang",
