@@ -11,20 +11,29 @@ $ rank-anything convert 120k --from canada-income --to lol-rank
   ≈ Emerald II  (86% of the way through) in League of Legends solo queue rank
 ```
 
-It has no dependencies (pure Python 3.9+ stdlib) and ships with several real
-datasets. To add your own, write a small JSON file; there's a built-in prompt
+It's written in TypeScript and ships with
+several real datasets. Use it as a command-line tool, or as a library in Node
+or in the browser: the whole thing runs client-side, with the datasets
+embedded. To add your own, write a small JSON file; there's a built-in prompt
 for getting one out of Perplexity, ChatGPT or Claude.
 
 ---
 
 ## Install
 
+Needs Node.js 18 or newer.
+
 ```bash
 git clone <this repo> && cd rank_anything
-pip install -e .          # installs the `rank-anything` command
+npm install               # also builds dist/
+npm link                  # installs the `rank-anything` command
 # or, without installing:
-PYTHONPATH=src python -m rank_anything --help
+node dist/bin.js --help
+node src/bin.ts --help    # straight from source, on Node 22.18+
 ```
+
+To use it as a library in another project, add it as a dependency
+(`npm install <path or git URL>`); see [Library use](#library-use-node-and-browser).
 
 ## Quick start
 
@@ -32,6 +41,8 @@ PYTHONPATH=src python -m rank_anything --help
 rank-anything list                                           # what's available
 rank-anything convert 85k --from canada-income --to lol-rank # one target
 rank-anything convert E5 --from meta-level                   # compare against everything
+rank-anything convert 1520 --from sat-score --to lol-rank --raw  # just the answer: Diamond II
+rank-anything percentile 1520 --from sat-score               # just the percentile: 97.6
 rank-anything table --from valorant-rank --to lol-rank       # full side-by-side mapping
 rank-anything show lol-rank                                  # inspect a distribution
 ```
@@ -130,7 +141,35 @@ rank-anything convert 97k --from examples/team-salaries.json --to canada-income
 rank-anything convert 97k --from examples/team-salaries.csv --to lol-rank
 ```
 
-**Scripting.** Add `--json` for machine-readable output:
+**Scripting.** For output you can pipe into other programs, add `--raw`
+to print only the equivalent value, or use `percentile` to print only the
+percentile, as a bare number:
+
+```console
+$ rank-anything convert 1520 --from sat-score --to lol-rank --raw
+Diamond II
+
+$ rank-anything percentile 1520 --from sat-score
+97.6
+
+$ rank-anything percentile 1520 --from sat-score --top
+2.4
+```
+
+With several targets (or none, which compares against all), `--raw` prints
+one `name<TAB>value` line per target. Numbers come out without units or
+thousands separators, times as clock times, and percentiles without `%`:
+
+```console
+$ rank-anything convert 1520 -f sat-score -t lol-rank -t canada-income -t percentile -t marathon-time --raw
+lol-rank	Diamond II
+canada-income	239970
+percentile	97.6
+marathon-time	2:57:10
+```
+
+For everything at once (unrounded percentile, position within a tier, and
+whether a value was clamped or extrapolated), add `--json` instead:
 
 ```bash
 rank-anything convert Challenger -f lol-rank -t valorant-rank --json
@@ -143,7 +182,8 @@ Numbers can be written the way people usually write them: `85000`, `85,000`,
 
 | Command | What it does |
 |---|---|
-| `convert VALUE -f SRC [-t DST ...] [-p POS] [--json]` | Convert a value. Repeat `-t` for several targets, or omit it to compare against all distributions. |
+| `convert VALUE -f SRC [-t DST ...] [-p POS] [--json \| --raw]` | Convert a value. Repeat `-t` for several targets, or omit it to compare against all distributions. `--raw` prints only the equivalent value(s). |
+| `percentile VALUE -f SRC [-p POS] [--top]` | Print just the percentile of a value ("better than X%"), or with `--top` the top X%, as a bare number. |
 | `table -f SRC -t DST` | Map every label of SRC onto DST. For a numeric SRC, the rows are standard percentiles. |
 | `show NAME` | Metadata plus the data table (bands, points, or standard percentiles). |
 | `list` | Every built-in, user-installed and pseudo distribution. |
@@ -191,8 +231,8 @@ the data and the source of any one.
 
 | Name | Values | Source |
 |---|---|---|
-| `us-income` | USD | US individual income (adjusted gross income on individual tax returns), 2023. Median and up: [IRS Table 4.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-tax-rate-and-income-percentile) percentile floors, to the top 0.001%. Below median: [IRS Table 1.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-size-of-adjusted-gross-income). Method: `scripts/build_us_income.py` |
-| `us-net-worth` | USD | Household net worth, 2022 [Survey of Consumer Finances](https://www.federalreserve.gov/econres/scfindex.htm) (Federal Reserve): weighted percentiles computed from the public microdata. Method: `scripts/build_net_worth.py` |
+| `us-income` | USD | US individual income (adjusted gross income on individual tax returns), 2023. Median and up: [IRS Table 4.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-tax-rate-and-income-percentile) percentile floors, to the top 0.001%. Below median: [IRS Table 1.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-size-of-adjusted-gross-income). Method: `scripts/build_us_income.ts` |
+| `us-net-worth` | USD | Household net worth, 2022 [Survey of Consumer Finances](https://www.federalreserve.gov/econres/scfindex.htm) (Federal Reserve): weighted percentiles computed from the public microdata. Method: `scripts/build_net_worth.ts` |
 | `canada-net-worth` | CAD | Family net worth, 2023 [Survey of Financial Security](https://www150.statcan.gc.ca/n1/pub/13m0006x/13m0006x2021001-eng.htm) (Statistics Canada) microdata; top 1% from the [Parliamentary Budget Officer](https://www.pbo-dpb.ca/en/publications/RP-2526-009-S--estimating-top-tail-family-wealth-distribution-in-canada-2025-update--estimation-extremite-superieure-distribution-patrimoine-familial-canada-mises-jour-2025) |
 | `credit-score` | 300–850 | FICO Score 8 by range, [Experian](https://www.experian.com/blogs/ask-experian/what-is-the-average-credit-score-in-the-u-s/), Sep 2025 (only 5 ranges published) |
 | `canada-income` | CAD | [Statistics Canada](https://www150.statcan.gc.ca/n1/daily-quotidien/251031/dq251031b-eng.htm) 2023 top-1%/0.1%/0.01% cutoffs; lower percentiles are approximate |
@@ -207,10 +247,11 @@ the data and the source of any one.
 **Pseudo-distributions:** `percentile` ("better than X%") and `top` ("top X%").
 
 **Refreshing data.** The scripts in `scripts/` rebuild datasets from their
-sources. `build_live_stats.py` fetches Lichess and Monkeytype,
-`build_github_stars.py` queries GitHub search, and `build_net_worth.py`
+sources (run them with `node scripts/NAME.ts` on Node 22.18+, or add `--out DIR` to write
+somewhere other than `data/`). `build_live_stats.ts` fetches Lichess and Monkeytype,
+`build_github_stars.ts` queries GitHub search, and `build_net_worth.ts`
 recomputes net worth from the Fed and Statistics Canada microdata.
-`build_test_scores.py` and `build_us_income.py` hold the published tables.
+`build_test_scores.ts` and `build_us_income.ts` hold the published tables.
 Every other dataset is a fixed snapshot whose `source` field says where to
 look for newer figures.
 
@@ -473,27 +514,73 @@ run `rank-anything validate file.json` and `rank-anything add file.json`.
 Check the numbers against the cited sources, because AI tools do sometimes
 make up statistics.
 
-## Python API
+## Library use (Node and browser)
 
-```python
-import rank_anything as ra
+```ts
+import { convert, percentile, load, fromDict } from "rank-anything";
 
-c = ra.convert("85k", "canada-income", "lol-rank")
-c.percentile                   # 81.48...
-c.target_placement.value       # 'Platinum I'
-c.target_placement.position    # 0.74  (how far through the tier)
+const c = convert("85k", "canada-income", "lol-rank");
+c.percentile;                     // 81.48...
+c.targetPlacement.value;          // 'Platinum I'
+c.targetPlacement.position;       // 0.74  (how far through the tier)
 
-ra.percentile("E6", "meta-level")        # 90.5
-ra.load("examples/marathon-times.json")  # any JSON path works
-ra.from_dict({"type": "normal", "data": {"mean": 0, "std": 1}})
+percentile("E6", "meta-level");   // 90.5
+fromDict({ type: "normal", data: { mean: 0, std: 1 } });
 ```
+
+There are three entry points:
+
+| Import | Contents | Runs in |
+|---|---|---|
+| `rank-anything` | Everything below, plus the built-in datasets (about 26 KB of JSON). | browser, Node, workers |
+| `rank-anything/core` | The same, without the built-in datasets: bring your own data. | browser, Node, workers |
+| `rank-anything/node` | Also loads file paths (`load("examples/marathon-times.json")`) and the user directory that `rank-anything add` installs into. This is what the CLI uses. | Node |
+
+A pre-bundled ES module for a plain `<script type="module">`, with no build
+step, is at `dist/browser/rank-anything.js` (also exported as
+`rank-anything/browser`). `examples/web/index.html` is a small demo page that
+uses it, including adding a dataset from an uploaded file.
+
+**Your own data in the browser.** User distributions live in memory in a
+`Registry`. The default one behind `convert`, `load` and friends is exported as
+`registry`:
+
+```ts
+import { registry, specFromText, convertMany, describe } from "rank-anything";
+
+// From an object, from JSON text, or from an uploaded .json/.csv/.txt file
+registry.add({ name: "team", type: "samples", data: [68000, 85000, 97000, 150000] });
+registry.add(specFromText(await file.text(), file.name));
+
+const { placement, results } = convertMany("90k", "team");   // against every distribution
+for (const c of results) console.log(c.target.name, describe(c.target, c.targetPlacement));
+```
+
+Use `new Registry({ builtins: BUILTIN_SPECS })` for a separate set, or
+`new Registry()` from `rank-anything/core` for one with no built-ins.
+`describe`, `rankLine`, `dataTable` and `mappingTable` produce the same text
+and tables as the CLI, for showing results in a UI.
+
+One JavaScript quirk: objects list integer-like keys (`"10"`, `"2"`) first,
+whatever order they were written in. That matters for labeled `frequency`
+data, where the order is the ranking. JSON text passed to `registry.add`,
+`specFromText` or `parseJson` keeps its original order. If you build a spec
+as a JS object with integer-like labels, write `data` as a list of pairs
+instead.
 
 ## Development
 
 ```bash
-pip install -e '.[dev]'
-pytest
+npm install
+npm test            # vitest
+npm run typecheck   # also checks that the browser entry points don't use Node APIs
+npm run build       # dist/: compiled modules, type declarations, browser bundle
+npm run gen         # after editing data/*.json: re-embed the datasets in src/builtins.ts
 ```
+
+`tests/golden.test.ts` checks CLI output byte for byte, and the math, parsing
+and label matching, against recorded reference outputs
+(`tests/fixtures/golden.json`).
 
 ## Caveats
 

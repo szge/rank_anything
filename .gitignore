@@ -1,10 +1,4 @@
-__pycache__/
-*.py[cod]
-*.egg-info/
-.eggs/
-build/
+node_modules/
 dist/
-.venv/
-venv/
-.pytest_cache/
-.coverage
+*.tgz
+coverage/

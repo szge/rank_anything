@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rank Anything</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; }
+    form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: end; }
+    label { display: flex; flex-direction: column; font-size: .85rem; }
+    input, select, button { font: inherit; padding: .3rem .4rem; }
+    pre { background: #f4f4f4; padding: 1rem; overflow-x: auto; }
+    .error { color: #b00020; }
+  </style>
+</head>
+<body>
+  <h1>Rank Anything</h1>
+  <p>Runs entirely in the browser. Build first with <code>npm run build</code>, then serve the repository root
+    (e.g. <code>npx http-server .</code>) and open <code>/examples/web/</code>.</p>
+  <form id="form">
+    <label>Value <input id="value" value="120k" required></label>
+    <label>From <select id="from"></select></label>
+    <label>To <select id="to"><option value="">(everything)</option></select></label>
+    <button>Convert</button>
+  </form>
+  <p><label>Or add your own data (.json, .csv, .txt): <input type="file" id="file" accept=".json,.csv,.tsv,.txt"></label></p>
+  <pre id="out"></pre>
+
+  <script type="module">
+    import { available, convertMany, describe, rankLine, registry, specFromText } from "../../dist/browser/rank-anything.js";
+
+    const $ = (id) => document.getElementById(id);
+
+    function fillSelects() {
+      for (const select of [$("from"), $("to")]) {
+        const keep = select.value;
+        select.querySelectorAll("option[value]:not([value=''])").forEach((o) => o.remove());
+        for (const name of Object.keys(available())) select.add(new Option(name, name));
+        select.value = keep;
+      }
+    }
+
+    function show() {
+      const out = $("out");
+      out.className = "";
+      try {
+        const targets = $("to").value ? [$("to").value] : undefined;
+        const { source, placement, results } = convertMany($("value").value, $("from").value, { targets });
+        out.textContent = [
+          `${describe(source, placement, false)} in ${source.displayName}`,
+          `  = ${rankLine(placement.percentile)}`,
+          "",
+          ...results.map((c) => `${c.target.name.padEnd(20)} ${describe(c.target, c.targetPlacement)}`),
+        ].join("\n");
+      } catch (e) {
+        out.className = "error";
+        out.textContent = e.message;
+      }
+    }
+
+    $("file").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const dist = registry.add(specFromText(await file.text(), file.name), { force: true });
+        fillSelects();
+        $("from").value = dist.name;
+        show();
+      } catch (e) {
+        $("out").className = "error";
+        $("out").textContent = e.message;
+      }
+    });
+
+    fillSelects();
+    $("from").value = "canada-income";
+    $("to").value = "lol-rank";
+    $("form").addEventListener("submit", (event) => { event.preventDefault(); show(); });
+    show();
+  </script>
+</body>
+</html>

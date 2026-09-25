@@ -1,0 +1,6 @@
+{
+  "//": "Type-checks the browser entry points without Node types, so they can't use Node APIs.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": [], "noEmit": true },
+  "include": ["src/index.ts", "src/core.ts"]
+}

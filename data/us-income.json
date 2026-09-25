@@ -1,7 +1,7 @@
 {
   "name": "us-income",
   "title": "US individual income (USD, before tax)",
-  "description": "Adjusted gross income on US individual income tax returns, tax year 2023. Median and up: IRS Table 4.1 percentile floors (to the top 0.001%). Below the median: IRS Table 1.1 AGI brackets, adjusted to exclude dependents' returns. See scripts/build_us_income.py.",
+  "description": "Adjusted gross income on US individual income tax returns, tax year 2023. Median and up: IRS Table 4.1 percentile floors (to the top 0.001%). Below the median: IRS Table 1.1 AGI brackets, adjusted to exclude dependents' returns. See scripts/build_us_income.ts.",
   "type": "percentile",
   "percentile_kind": "below",
   "interpolation": "loglog",
