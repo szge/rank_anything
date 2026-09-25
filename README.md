@@ -24,16 +24,24 @@ for getting one out of Perplexity, ChatGPT or Claude.
 Needs Node.js 18 or newer.
 
 ```bash
-git clone <this repo> && cd rank_anything
+npm install -g rank-anything   # installs the `rank-anything` command
+# or run it once without installing:
+npx rank-anything --help
+```
+
+To use it as a library, `npm install rank-anything`; see
+[Library use](#library-use-node-and-browser).
+
+From source:
+
+```bash
+git clone https://github.com/szge/rank_anything.git && cd rank_anything
 npm install               # also builds dist/
 npm link                  # installs the `rank-anything` command
 # or, without installing:
 node dist/bin.js --help
 node src/bin.ts --help    # straight from source, on Node 22.18+
 ```
-
-To use it as a library in another project, add it as a dependency
-(`npm install <path or git URL>`); see [Library use](#library-use-node-and-browser).
 
 ## Quick start
 

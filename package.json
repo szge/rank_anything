@@ -3,6 +3,15 @@
   "version": "0.2.0",
   "description": "Convert values between statistical distributions: what LoL rank is your salary?",
   "license": "MIT",
+  "author": "Jonathan Chiang",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/szge/rank_anything.git"
+  },
+  "homepage": "https://github.com/szge/rank_anything#readme",
+  "bugs": {
+    "url": "https://github.com/szge/rank_anything/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=18"
@@ -25,14 +34,16 @@
       "types": "./dist/node.d.ts",
       "default": "./dist/node.js"
     },
-    "./browser": "./dist/browser/rank-anything.js",
+    "./browser": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/browser/rank-anything.js"
+    },
     "./package.json": "./package.json"
   },
   "sideEffects": false,
   "files": [
     "dist",
-    "data",
-    "README.md"
+    "data"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json && chmod +x dist/bin.js && npm run bundle",
@@ -41,7 +52,8 @@
     "typecheck": "tsc --noEmit && tsc -p tsconfig.browser.json",
     "test": "vitest run",
     "check": "npm run typecheck && npm test",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run check"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
@@ -54,6 +66,10 @@
     "distribution",
     "rank",
     "statistics",
-    "cli"
+    "cli",
+    "percentile-rank",
+    "z-score",
+    "elo",
+    "salary"
   ]
 }
