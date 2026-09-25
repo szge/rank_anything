@@ -167,5 +167,19 @@ def test_duration_distribution_from_dict():
                    "data": {"3:00": 10, "4:00": 50, "5:00": 90}})
     assert d.to_percentile("3:30").percentile == pytest.approx(70)  # faster = better
     assert d.format_value(d.from_percentile(70).value) == "3:30:00"
+    assert d.to_percentile(3.5 * 3600).percentile == pytest.approx(70)  # numbers = seconds
     with pytest.raises(DistributionError):
         from_dict({"type": "normal", "duration": "hours", "data": {"mean": 1, "std": 1}})
+
+
+def test_acronyms_and_aliases():
+    d = LabeledDistribution.from_frequencies(
+        "rl", [("Gold 1", 1), ("Grand Champion 1", 1), ("Grand Champion 2", 1), ("Supersonic Legend", 1)],
+        aliases={"SSL": "Supersonic Legend"},
+    )
+    assert d.find("gc 2").label == "Grand Champion 2"
+    assert d.find("GC1").label == "Grand Champion 1"
+    assert d.find("ssl").label == "Supersonic Legend"
+    assert d.find_span("gc").label == "Grand Champion 1 – Grand Champion 2"
+    with pytest.raises(DistributionError, match="unknown label"):
+        LabeledDistribution.from_frequencies("x", [("A", 1)], aliases={"b": "Nope"})

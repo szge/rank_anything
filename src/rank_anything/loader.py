@@ -131,7 +131,7 @@ def from_dict(spec: dict, default_name: str = "custom") -> Distribution:
             )
         meta.pop("higher_is_better")
         meta.pop("duration", None)
-        return LabeledDistribution.from_frequencies(name, nums, **meta)
+        return LabeledDistribution.from_frequencies(name, nums, aliases=spec.get("aliases"), **meta)
 
     # dtype == "percentile"
     kind = spec.get("percentile_kind", "below")
@@ -143,7 +143,7 @@ def from_dict(spec: dict, default_name: str = "custom") -> Distribution:
         return PiecewiseDistribution(name, [(num(k), p) for k, p in nums], **tail, **meta)
     meta.pop("higher_is_better")
     meta.pop("duration", None)
-    return LabeledDistribution.from_starts(name, nums, **meta)
+    return LabeledDistribution.from_starts(name, nums, aliases=spec.get("aliases"), **meta)
 
 
 def read_spec(path: Union[str, Path]) -> dict:

@@ -5,6 +5,7 @@
   "type": "frequency",
   "source": "https://www.esportstales.com/league-of-legends/rank-distribution-percentage-of-players-by-tier",
   "date": "2026-08",
+  "aliases": { "GM": "Grandmaster" },
   "data": {
     "Iron IV": 0.38, "Iron III": 0.42, "Iron II": 0.9, "Iron I": 1.7,
     "Bronze IV": 4.5, "Bronze III": 3.7, "Bronze II": 4.0, "Bronze I": 3.6,

@@ -193,6 +193,10 @@ class NumericDistribution(Distribution):
 
     def parse_value(self, raw) -> float:
         if self.duration:
+            # Text is human input ("25:20", or "25" = minutes); numbers are
+            # already in the stored unit, seconds.
+            if isinstance(raw, (int, float)):
+                return float(raw)
             return parse_duration(raw, self.duration)
         return parse_number(raw)
 
@@ -466,13 +470,20 @@ class LabeledDistribution(Distribution):
 
     kind = "labeled"
 
-    def __init__(self, name: str, bands: Sequence[Band], **meta):
+    def __init__(self, name: str, bands: Sequence[Band], aliases: Optional[dict] = None, **meta):
         super().__init__(name, **meta)
         if not bands:
             raise DistributionError(f"{name}: no labels given")
         self.bands = list(bands)
         self._index: dict[str, int] = {}
         self._tokens = [_label_tokens(b.label) for b in self.bands]
+        # "Grand Champion 2" -> "gc2": initials of the words plus any numbers,
+        # for labels with at least two words.
+        self._acronyms = [
+            "".join(t[0] for t in toks if t.isalpha()) + "".join(t for t in toks if t.isdigit())
+            if sum(t.isalpha() for t in toks) >= 2 else ""
+            for toks in self._tokens
+        ]
         for i, b in enumerate(self.bands):
             if b.hi < b.lo:
                 raise DistributionError(f"{name}: label {b.label!r} has negative width")
@@ -480,6 +491,15 @@ class LabeledDistribution(Distribution):
             if key in self._index:
                 raise DistributionError(f"{name}: duplicate label {b.label!r}")
             self._index[key] = i
+        # Extra names people use for a label, e.g. {"SSL": "Supersonic Legend"}.
+        self._aliases: dict[str, int] = {}
+        for alias, target in (aliases or {}).items():
+            key, target_key = normalize_label(alias), normalize_label(target)
+            if target_key not in self._index:
+                raise DistributionError(f"{name}: alias {alias!r} points to unknown label {target!r}")
+            if key in self._index:
+                raise DistributionError(f"{name}: alias {alias!r} clashes with a label")
+            self._aliases[key] = self._index[target_key]
 
     @classmethod
     def from_frequencies(cls, name: str, freqs: Sequence[tuple[str, float]], **meta):
@@ -516,14 +536,17 @@ class LabeledDistribution(Distribution):
         query = _label_tokens(label)
         key = "".join(query)
         return [
-            i for i, (k, toks) in enumerate(zip(self._index, self._tokens))
-            if (key and k.startswith(key)) or _token_prefix_match(query, toks)
+            i for i, (k, toks, acr) in enumerate(zip(self._index, self._tokens, self._acronyms))
+            if (key and (k.startswith(key) or (acr and acr.startswith(key))))
+            or _token_prefix_match(query, toks)
         ]
 
     def find(self, label: str) -> Band:
         key = normalize_label(label)
         if key in self._index:
             return self.bands[self._index[key]]
+        if key in self._aliases:
+            return self.bands[self._aliases[key]]
         matches = [self.bands[i] for i in self._prefix_matches(label)]
         if len(matches) == 1:
             return matches[0]
@@ -537,7 +560,8 @@ class LabeledDistribution(Distribution):
     def find_span(self, label: str) -> Band:
         """Like :meth:`find`, but a prefix matching several *adjacent* labels
         (e.g. 'gold' -> Gold IV..Gold I) returns their combined band."""
-        if normalize_label(label) not in self._index:
+        key = normalize_label(label)
+        if key not in self._index and key not in self._aliases:
             idx = self._prefix_matches(label)
             if len(idx) > 1 and idx == list(range(idx[0], idx[-1] + 1)):
                 first, last = self.bands[idx[0]], self.bands[idx[-1]]
