@@ -17,6 +17,10 @@ or in the browser: the whole thing runs client-side, with the datasets
 embedded. To add your own, write a small JSON file; there's a built-in prompt
 for getting one out of Perplexity, ChatGPT or Claude.
 
+**Missing a game, exam or statistic?** Please add it! Dataset pull requests
+are the most useful contribution to this project, and each new dataset works
+with every existing one. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ---
 
 ## Install
@@ -261,7 +265,12 @@ somewhere other than `data/`). `build_live_stats.ts` fetches Lichess and Monkeyt
 recomputes net worth from the Fed and Statistics Canada microdata.
 `build_test_scores.ts` and `build_us_income.ts` hold the published tables.
 Every other dataset is a fixed snapshot whose `source` field says where to
-look for newer figures.
+look for newer figures. Pull requests with newer numbers are welcome.
+
+**Want another one?** Adding a dataset takes one JSON file with a source
+cited; [CONTRIBUTING.md](CONTRIBUTING.md) walks through it. Good candidates
+include more games (Fortnite, Marvel Rivals, osu!), more countries' income
+and wealth, other exams (IELTS, GMAT, AP) and more sports.
 
 Test scores use "% of test takers scoring below", so a percentile reads as
 "better than X%". ACT and MCAT publish "% at or below", which is converted
@@ -589,6 +598,9 @@ npm run gen         # after editing data/*.json: re-embed the datasets in src/bu
 `tests/golden.test.ts` checks CLI output byte for byte, and the math, parsing
 and label matching, against recorded reference outputs
 (`tests/fixtures/golden.json`).
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add a dataset or send a
+pull request.
 
 ## Caveats
 

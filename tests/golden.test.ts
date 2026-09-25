@@ -10,7 +10,7 @@
  */
 
 import { readFileSync } from "node:fs";
-import { beforeAll, describe, expect, test } from "vitest";
+import { beforeAll, describe, expect, test, vi } from "vitest";
 import { main } from "../src/cli.ts";
 import {
   DistributionError,
@@ -37,6 +37,15 @@ interface GoldenPlacement { percentile: Num; value: Num | string; position: numb
 type Result<T> = { ok: T } | { error: string };
 
 const golden = JSON.parse(readFileSync(new URL("./fixtures/golden.json", import.meta.url), "utf8"));
+
+// Datasets added after the recording would change `list` and every
+// convert-to-all-targets output, so only the recorded built-ins are loaded here.
+// New datasets are covered by tests/builtin.test.ts instead.
+vi.mock("../src/builtins.ts", async (importOriginal) => {
+  const { BUILTIN_SPECS } = await importOriginal<typeof import("../src/builtins.ts")>();
+  const recorded = JSON.parse(readFileSync(new URL("./fixtures/golden.json", import.meta.url), "utf8")).api;
+  return { BUILTIN_SPECS: Object.fromEntries(Object.entries(BUILTIN_SPECS).filter(([name]) => name in recorded)) };
+});
 
 beforeAll(() => {
   process.env.RANK_ANYTHING_HOME = "/nonexistent/ra-golden-home";
