@@ -142,18 +142,12 @@ Numbers can be written the way people usually write them: `85000`, `85,000`,
 | `lol-rank` | labeled (Iron IV … Challenger) | [Esports Tales](https://www.esportstales.com/league-of-legends/rank-distribution-percentage-of-players-by-tier), Aug 2026, all regions |
 | `valorant-rank` | labeled (Iron 1 … Radiant) | [Esports Tales](https://www.esportstales.com/valorant/rank-distribution-and-percentage-of-players-by-tier), V26 Act 5 |
 | `canada-income` | numeric, CAD | [Statistics Canada](https://www150.statcan.gc.ca/n1/daily-quotidien/251031/dq251031b-eng.htm) 2023 top-1%/0.1%/0.01% cutoffs; lower percentiles are approximate |
-| `us-salary` | numeric, USD/yr | Full-time workers. 10th–90th percentile: [BLS Usual Weekly Earnings](https://www.bls.gov/news.release/wkyeng.t05.htm), Q2 2026 (weekly × 52). Above ~$250k: [IRS W-2 wage brackets](https://www.irs.gov/statistics/soi-tax-stats-individual-information-return-form-w2-statistics) up to $10M+ (2020, scaled to 2026 wages). Method: `scripts/build_us_salary.py` |
-| `us-income` | numeric, USD | **Per tax return** AGI (wages + investment/business income; joint filers count once), 2023. Median and up: [IRS Table 4.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-tax-rate-and-income-percentile) percentile floors, to the top 0.001%. Below median: [IRS Table 1.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-size-of-adjusted-gross-income). Method: `scripts/build_us_income.py` |
+| `us-income` | numeric, USD | US individual income (adjusted gross income on individual tax returns), 2023. Median and up: [IRS Table 4.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-tax-rate-and-income-percentile) percentile floors, to the top 0.001%. Below median: [IRS Table 1.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-size-of-adjusted-gross-income). Method: `scripts/build_us_income.py` |
 | `meta-level` | labeled (E3 … E9) | **rough community estimate** (not official) |
 | `sat-score` | numeric, 400–1600 | College Board SAT User Percentiles (via [Larry Learns](https://www.larrylearns.com/blog/sat-percentiles)) |
 | `iq` | normal(100, 15) | Standard test norming |
 | `us-male-height` | normal(175.4, 7.6) cm | CDC NHANES (approximate) |
 | `percentile`, `top` | pseudo | "better than X%" and "top X%" |
-
-`us-salary` and `us-income` measure different things. Use `us-salary` for one
-person's pay, and `us-income` for everything on a tax return, which may be a
-couple's combined income plus investments. At the top 1%, they give about $471k
-and $676k respectively.
 
 The `examples/` folder has one file for each input format:
 `team-salaries.json` (samples), `marathon-times.json` (lower is better),
@@ -213,12 +207,12 @@ Which tail is used depends on the data (the `"tail"` field in the JSON):
 ### Sparse top-end data: `"interpolation": "loglog"`
 
 Income-like data often has only a few widely spaced points near the top, for
-example $252k (top 3.4%) and $630k (top 0.56%). A straight line between two
-such points overstates the values in between: it puts the top-1% cutoff at
-~$572k instead of ~$471k. Setting `"interpolation": "loglog"` makes every
+example $675,602 (top 1%) and $3,100,950 (top 0.1%). A straight line between
+two such points overstates the values in between: it puts the top-0.5% cutoff
+at ~$2.02M instead of ~$1.07M. Setting `"interpolation": "loglog"` makes every
 segment above the median follow the power law through its two endpoints (the
 same Pareto shape used for the tail). Segments below the median stay linear.
-`us-salary` uses this setting.
+`us-income` uses this setting.
 
 Clamped results are marked `[outside known range, clamped]` and extrapolated
 ones `[beyond known data, extrapolated]`. Extrapolated results are estimates:

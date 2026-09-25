@@ -1,8 +1,7 @@
 """Rebuild src/rank_anything/data/us-income.json from IRS SOI tables (tax year 2023).
 
-This is income *per tax return*: adjusted gross income (AGI), which includes
-wages plus investment, business and capital-gains income, and a married couple
-filing jointly counts as one return. For individual paychecks see us-salary.
+US individual income: adjusted gross income (AGI) reported on individual
+income tax returns (wages plus investment, business and capital-gains income).
 
 Top half (median and up): IRS SOI Table 4.1, "AGI floor on percentiles"
 (current dollars), all returns excluding dependents (153.1M returns).
@@ -70,12 +69,10 @@ def build() -> dict:
     points = dict(sorted(points.items(), key=lambda kv: float(kv[0])))
     return {
         "name": "us-income",
-        "title": "US income per tax return (AGI, USD)",
+        "title": "US individual income (USD, before tax)",
         "description": (
-            "Adjusted gross income per federal tax return, tax year 2023. Includes wages, "
-            "investment, business and capital-gains income; joint filers count as one "
-            "return (so this is closer to household than individual income). Median and "
-            "up: IRS Table 4.1 percentile floors (to the top 0.001%). Below the median: "
+            "Adjusted gross income on US individual income tax returns, tax year 2023. "
+            "Median and up: IRS Table 4.1 percentile floors (to the top 0.001%). Below the median: "
             "IRS Table 1.1 AGI brackets, adjusted to exclude dependents' returns. See scripts/build_us_income.py."
         ),
         "type": "percentile",
