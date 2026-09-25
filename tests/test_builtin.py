@@ -30,6 +30,15 @@ def test_known_conversions():
     assert ra.percentile("$120k", "us-salary") == pytest.approx(100 - 25 * (120000 / 99580) ** -a)
     # IRS-derived top-end anchor: $1M+ in 2020 dollars, scaled to 2026.
     assert ra.percentile("1,259,800", "us-salary") == pytest.approx(99.85313)
+    # us-income: IRS Table 4.1 floors are exact percentile anchors.
+    assert ra.percentile(53_801, "us-income") == pytest.approx(50)
+    assert ra.percentile(675_602, "us-income") == pytest.approx(99)
+    assert ra.percentile(78_617_933, "us-income") == pytest.approx(99.999)
+    beyond = ra.load("us-income").to_percentile("1B")
+    assert beyond.extrapolated and 99.999 < beyond.percentile < 100
+    # Household-style AGI runs higher than individual full-time salary at the top.
+    assert ra.convert(99, "percentile", "us-income").target_placement.value > \
+        ra.convert(99, "percentile", "us-salary").target_placement.value
     assert ra.percentile("1M", "us-salary") > ra.percentile("500k", "us-salary") > 99
 
 

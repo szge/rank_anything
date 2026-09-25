@@ -143,11 +143,17 @@ Numbers can be written the way people usually write them: `85000`, `85,000`,
 | `valorant-rank` | labeled (Iron 1 … Radiant) | [Esports Tales](https://www.esportstales.com/valorant/rank-distribution-and-percentage-of-players-by-tier), V26 Act 5 |
 | `canada-income` | numeric, CAD | [Statistics Canada](https://www150.statcan.gc.ca/n1/daily-quotidien/251031/dq251031b-eng.htm) 2023 top-1%/0.1%/0.01% cutoffs; lower percentiles are approximate |
 | `us-salary` | numeric, USD/yr | Full-time workers. 10th–90th percentile: [BLS Usual Weekly Earnings](https://www.bls.gov/news.release/wkyeng.t05.htm), Q2 2026 (weekly × 52). Above ~$250k: [IRS W-2 wage brackets](https://www.irs.gov/statistics/soi-tax-stats-individual-information-return-form-w2-statistics) up to $10M+ (2020, scaled to 2026 wages). Method: `scripts/build_us_salary.py` |
+| `us-income` | numeric, USD | **Per tax return** AGI (wages + investment/business income; joint filers count once), 2023. Median and up: [IRS Table 4.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-tax-rate-and-income-percentile) percentile floors, to the top 0.001%. Below median: [IRS Table 1.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-size-of-adjusted-gross-income). Method: `scripts/build_us_income.py` |
 | `meta-level` | labeled (E3 … E9) | **rough community estimate** (not official) |
 | `sat-score` | numeric, 400–1600 | College Board SAT User Percentiles (via [Larry Learns](https://www.larrylearns.com/blog/sat-percentiles)) |
 | `iq` | normal(100, 15) | Standard test norming |
 | `us-male-height` | normal(175.4, 7.6) cm | CDC NHANES (approximate) |
 | `percentile`, `top` | pseudo | "better than X%" and "top X%" |
+
+`us-salary` and `us-income` measure different things. Use `us-salary` for one
+person's pay, and `us-income` for everything on a tax return, which may be a
+couple's combined income plus investments. At the top 1%, they give about $471k
+and $676k respectively.
 
 The `examples/` folder has one file for each input format:
 `team-salaries.json` (samples), `marathon-times.json` (lower is better),
