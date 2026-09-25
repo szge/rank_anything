@@ -1,6 +1,6 @@
 # rank_anything
 
-**What League of Legends rank is your salary?**
+**What League of Legends rank is your income?**
 
 `rank_anything` converts a value from one statistical distribution into the
 equivalent value in another: your income in CAD, your level at Meta, your SAT
