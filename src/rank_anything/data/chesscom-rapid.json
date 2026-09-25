@@ -1,0 +1,21 @@
+{
+  "name": "chesscom-rapid",
+  "title": "Chess.com rapid rating (approximate)",
+  "description": "APPROXIMATE. Chess.com doesn't publish its rating distribution; these are midpoints of community-reported ranges (e.g. '400 is ~20-30th percentile'). 100 is the rating floor. For precise chess data use lichess-rapid or lichess-blitz.",
+  "type": "percentile",
+  "percentile_kind": "below",
+  "unit": "rating",
+  "source": "https://www.chess.com/blog/SolarGurke/what-percentage-of-chess-com-players-are-at-each-rating",
+  "date": "2026",
+  "data": {
+    "100": 0,
+    "400": 25,
+    "600": 47.5,
+    "800": 65,
+    "1000": 80,
+    "1200": 90,
+    "1400": 95,
+    "1600": 97.5,
+    "1800": 99
+  }
+}

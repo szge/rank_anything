@@ -1,0 +1,24 @@
+{
+  "name": "5k-time",
+  "title": "5K race finish time",
+  "description": "All runners, 35 million race results from 28,000+ races over 20 years (RunRepeat). Percentile = % of finishers who were faster. Enter times like 25:20.",
+  "type": "percentile",
+  "percentile_kind": "below",
+  "higher_is_better": false,
+  "duration": "mm:ss",
+  "interpolation": "linear",
+  "source": "https://runrepeat.com/how-do-you-masure-up-the-runners-percentile-calculator",
+  "date": "2026",
+  "data": {
+    "18:40": 1,
+    "25:20": 10,
+    "28:13": 20,
+    "30:26": 30,
+    "32:29": 40,
+    "34:37": 50,
+    "36:58": 60,
+    "39:48": 70,
+    "43:39": 80,
+    "50:04": 90
+  }
+}

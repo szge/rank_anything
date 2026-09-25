@@ -1,0 +1,12 @@
+{
+  "name": "us-female-height",
+  "title": "Adult US female height (cm)",
+  "description": "Approximated as normal with mean 161.3 cm and SD 7.1 cm.",
+  "type": "normal",
+  "unit": "cm",
+  "source": "CDC NHANES anthropometric reference data, 2015-2018 (approximate)",
+  "data": {
+    "mean": 161.3,
+    "std": 7.1
+  }
+}

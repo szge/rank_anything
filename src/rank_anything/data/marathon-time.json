@@ -1,0 +1,23 @@
+{
+  "name": "marathon-time",
+  "title": "Marathon finish time",
+  "description": "All runners, 35 million race results from 28,000+ races over 20 years (RunRepeat). Percentile = % of finishers who were faster. Enter times like 3:45 (h:mm) or 3:45:30.",
+  "type": "percentile",
+  "percentile_kind": "below",
+  "higher_is_better": false,
+  "duration": "h:mm",
+  "source": "https://runrepeat.com/how-do-you-masure-up-the-runners-percentile-calculator",
+  "date": "2026",
+  "data": {
+    "2:50:48": 1,
+    "3:31:46": 10,
+    "3:49:53": 20,
+    "4:02:56": 30,
+    "4:15:09": 40,
+    "4:26:33": 50,
+    "4:38:30": 60,
+    "4:52:18": 70,
+    "5:11:00": 80,
+    "5:41:45": 90
+  }
+}

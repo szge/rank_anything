@@ -1,0 +1,21 @@
+{
+  "name": "overwatch-rank",
+  "title": "Overwatch 2 competitive rank",
+  "description": "Share of competitive players per tier, all platforms, Season 17 (the most recent published). Tiers only; no division breakdown. Champion was reported as '<0.1%' and is entered as 0.05%.",
+  "type": "frequency",
+  "source": "https://www.esportstales.com/overwatch/competitive-rank-distribution-pc-and-console",
+  "date": "2025-07",
+  "aliases": {
+    "GM": "Grandmaster"
+  },
+  "data": {
+    "Bronze": 2.4,
+    "Silver": 12.6,
+    "Gold": 31.7,
+    "Platinum": 34.9,
+    "Diamond": 14.9,
+    "Master": 3.2,
+    "Grandmaster": 0.3,
+    "Champion": 0.05
+  }
+}

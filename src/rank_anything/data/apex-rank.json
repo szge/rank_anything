@@ -1,0 +1,40 @@
+{
+  "name": "apex-rank",
+  "title": "Apex Legends ranked tier",
+  "description": "Share of ranked players in each tier/division, Season 30. Ordered worst to best (Apex Predator is the top 750 per platform, listed as reported).",
+  "type": "frequency",
+  "source": "https://www.esportstales.com/apex-legends/rank-distribution-and-percentage-of-players-by-tier",
+  "date": "2026-08",
+  "aliases": {
+    "Pred": "Apex Predator",
+    "Predator": "Apex Predator"
+  },
+  "data": {
+    "Rookie IV": 0.71,
+    "Rookie III": 0.06,
+    "Rookie II": 0.04,
+    "Rookie I": 0.44,
+    "Bronze IV": 3.33,
+    "Bronze III": 2.9,
+    "Bronze II": 3.57,
+    "Bronze I": 4.17,
+    "Silver IV": 6.25,
+    "Silver III": 7.85,
+    "Silver II": 7.86,
+    "Silver I": 7.73,
+    "Gold IV": 9.25,
+    "Gold III": 11.21,
+    "Gold II": 8.9,
+    "Gold I": 7.03,
+    "Platinum IV": 5.38,
+    "Platinum III": 5.42,
+    "Platinum II": 2.96,
+    "Platinum I": 1.79,
+    "Diamond IV": 1.2,
+    "Diamond III": 0.95,
+    "Diamond II": 0.37,
+    "Diamond I": 0.21,
+    "Master": 0.05,
+    "Apex Predator": 0.26
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "rocket-league-rank",
+  "title": "Rocket League rank (Ranked Doubles 2v2)",
+  "description": "Ranked Doubles (2v2), Season 22. Source gives the % of players at each rank or higher.",
+  "type": "percentile",
+  "percentile_kind": "top",
+  "source": "https://www.esportstales.com/rocket-league/seasonal-rank-distribution-and-players-percentage-by-tier",
+  "date": "2026-06",
+  "aliases": {
+    "SSL": "Supersonic Legend"
+  },
+  "data": {
+    "Bronze 1": 100,
+    "Bronze 2": 97.722,
+    "Bronze 3": 95.881,
+    "Silver 1": 93.035,
+    "Silver 2": 88.748,
+    "Silver 3": 82.85,
+    "Gold 1": 75.325,
+    "Gold 2": 66.217,
+    "Gold 3": 56.694,
+    "Platinum 1": 47.464,
+    "Platinum 2": 38.535,
+    "Platinum 3": 31.165,
+    "Diamond 1": 25.051,
+    "Diamond 2": 17.98,
+    "Diamond 3": 12.76,
+    "Champion 1": 8.877,
+    "Champion 2": 4.613,
+    "Champion 3": 2.417,
+    "Grand Champion 1": 1.203,
+    "Grand Champion 2": 0.41,
+    "Grand Champion 3": 0.12,
+    "Supersonic Legend": 0.038
+  }
+}

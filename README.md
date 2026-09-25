@@ -69,6 +69,29 @@ Immortal 1 – Immortal 3 in Valorant competitive rank
   ≈ Master  (21% of the way through) in League of Legends solo queue rank
 ```
 
+**Game ranks, chess and running:**
+
+```console
+$ rank-anything convert gold --from lol-rank --to lichess-rapid --to dota2-rank --to cs2-premier
+Gold IV – Gold I in League of Legends solo queue rank
+  = better than 52% (top 48%)
+
+distribution   equivalent
+-------------  ----------------------------------
+lichess-rapid  1,422 rating
+dota2-rank     Archon 1  (34% of the way through)
+cs2-premier    12,240 rating
+
+$ rank-anything convert 25:20 --from 5k-time --to marathon-time
+25:20 in 5K race finish time
+  = better than 90% (top 10%)
+  ≈ 3:31:46 in Marathon finish time
+```
+
+Common abbreviations work too. Acronyms such as `gc 2` (Grand Champion 2) are
+matched automatically, and nicknames such as `SSL`, `GM` and `pred` are
+defined as aliases in the dataset files.
+
 **Where you sit inside a tier.** A labeled value defaults to the middle of
 its band. Use `--position` to choose a point from 0 (just promoted) to 1
 (about to promote):
@@ -137,17 +160,54 @@ Numbers can be written the way people usually write them: `85000`, `85,000`,
 
 ## Built-in distributions
 
-| Name | Type | Source |
+Run `rank-anything list` to see them all, and `rank-anything show NAME` for
+the data and the source of any one.
+
+**Competitive games**
+
+| Name | Values | Source |
 |---|---|---|
-| `lol-rank` | labeled (Iron IV … Challenger) | [Esports Tales](https://www.esportstales.com/league-of-legends/rank-distribution-percentage-of-players-by-tier), Aug 2026, all regions |
-| `valorant-rank` | labeled (Iron 1 … Radiant) | [Esports Tales](https://www.esportstales.com/valorant/rank-distribution-and-percentage-of-players-by-tier), V26 Act 5 |
-| `canada-income` | numeric, CAD | [Statistics Canada](https://www150.statcan.gc.ca/n1/daily-quotidien/251031/dq251031b-eng.htm) 2023 top-1%/0.1%/0.01% cutoffs; lower percentiles are approximate |
-| `us-income` | numeric, USD | US individual income (adjusted gross income on individual tax returns), 2023. Median and up: [IRS Table 4.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-tax-rate-and-income-percentile) percentile floors, to the top 0.001%. Below median: [IRS Table 1.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-size-of-adjusted-gross-income). Method: `scripts/build_us_income.py` |
-| `meta-level` | labeled (E3 … E9) | **rough community estimate** (not official) |
-| `sat-score` | numeric, 400–1600 | College Board SAT User Percentiles (via [Larry Learns](https://www.larrylearns.com/blog/sat-percentiles)) |
-| `iq` | normal(100, 15) | Standard test norming |
+| `lol-rank` | Iron IV … Challenger | [Esports Tales](https://www.esportstales.com/league-of-legends/rank-distribution-percentage-of-players-by-tier), Aug 2026, all regions |
+| `valorant-rank` | Iron 1 … Radiant | [Esports Tales](https://www.esportstales.com/valorant/rank-distribution-and-percentage-of-players-by-tier), V26 Act 5 |
+| `dota2-rank` | Herald 1 … Immortal | [Esports Tales](https://www.esportstales.com/dota-2/seasonal-rank-distribution-and-mmr-medals) (Stratz / Valve API), Aug 2026 |
+| `cs2-premier` | Premier rating | [Esports Tales](https://www.esportstales.com/csgo/rank-distribution-and-percentage-of-players) (Leetify), Jul 2026 |
+| `overwatch-rank` | Bronze … Champion (tiers only) | [Esports Tales](https://www.esportstales.com/overwatch/competitive-rank-distribution-pc-and-console), Season 17, Jul 2025 (latest published) |
+| `rocket-league-rank` | Bronze 1 … Supersonic Legend | [Esports Tales](https://www.esportstales.com/rocket-league/seasonal-rank-distribution-and-players-percentage-by-tier), Ranked Doubles, Season 22 |
+| `apex-rank` | Rookie IV … Apex Predator | [Esports Tales](https://www.esportstales.com/apex-legends/rank-distribution-and-percentage-of-players-by-tier), Season 30 |
+| `r6-rank` | Copper 5 … Champion | [Esports Tales](https://www.esportstales.com/rainbow-six-siege/seasonal-rank-distribution-and-percentage-of-players) (official Ubisoft data), Y10S3 |
+| `lichess-blitz`, `lichess-rapid` | rating | [Lichess](https://lichess.org/stat/rating/distribution/blitz) live stats: every player active that week |
+| `chesscom-rapid` | rating | **approximate**: community-reported ranges; Chess.com doesn't publish its distribution |
+| `monkeytype-wpm` | words per minute | [Monkeytype API](https://api.monkeytype.com/public/speedHistogram?language=english&mode=time&mode2=60): 60-second English personal bests. People who use a typing-test site type faster than average. |
+
+**Fitness and body**
+
+| Name | Values | Source |
+|---|---|---|
+| `5k-time` | e.g. `25:20` | [RunRepeat](https://runrepeat.com/how-do-you-masure-up-the-runners-percentile-calculator): 35M race results, all runners |
+| `marathon-time` | e.g. `3:45` or `3:45:30` | same as above |
 | `us-male-height` | normal(175.4, 7.6) cm | CDC NHANES (approximate) |
-| `percentile`, `top` | pseudo | "better than X%" and "top X%" |
+| `us-female-height` | normal(161.3, 7.1) cm | CDC NHANES 2015–2018 (approximate) |
+
+**Money, work and school**
+
+| Name | Values | Source |
+|---|---|---|
+| `us-income` | USD | US individual income (adjusted gross income on individual tax returns), 2023. Median and up: [IRS Table 4.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-tax-rate-and-income-percentile) percentile floors, to the top 0.001%. Below median: [IRS Table 1.1](https://www.irs.gov/statistics/soi-tax-stats-individual-statistical-tables-by-size-of-adjusted-gross-income). Method: `scripts/build_us_income.py` |
+| `canada-income` | CAD | [Statistics Canada](https://www150.statcan.gc.ca/n1/daily-quotidien/251031/dq251031b-eng.htm) 2023 top-1%/0.1%/0.01% cutoffs; lower percentiles are approximate |
+| `meta-level` | E3 … E9 | **rough community estimate** (not official) |
+| `sat-score` | 400–1600 | College Board SAT User Percentiles (via [Larry Learns](https://www.larrylearns.com/blog/sat-percentiles)) |
+| `iq` | normal(100, 15) | Standard test norming |
+
+**Pseudo-distributions:** `percentile` ("better than X%") and `top` ("top X%").
+
+**Refreshing live data.** `python scripts/build_live_stats.py` fetches the
+current Lichess and Monkeytype numbers. The other sources are fixed
+snapshots; their `source` field says where to look for newer figures.
+
+**Leaderboards (speedruns etc.).** There's no general speedrun distribution,
+because every game and category has its own leaderboard. Export a leaderboard's
+times to a CSV and use it directly with
+`rank-anything import times.csv --lower-is-better`.
 
 The `examples/` folder has one file for each input format:
 `team-salaries.json` (samples), `marathon-times.json` (lower is better),
@@ -235,7 +295,9 @@ and `data` holds the numbers.
   "date": "2026",
   "higher_is_better": true,       // numeric only: set false for e.g. race times
   "tail": "auto",                 // numeric points only: auto | pareto | exponential | clamp
-  "interpolation": "linear"       // numeric points only: linear | loglog (see below)
+  "interpolation": "linear",      // numeric points only: linear | loglog (see below)
+  "duration": "mm:ss",            // numeric only: values are times (see below)
+  "aliases": { "SSL": "Supersonic Legend" }  // labeled only: extra names for labels
 }
 ```
 
@@ -299,6 +361,19 @@ this JSON by hand. See [From a CSV or text file](#from-a-csv-or-text-file).
 ```json
 { "name": "iq", "type": "normal", "data": { "mean": 100, "std": 15 } }
 { "name": "incomes", "type": "lognormal", "data": { "median": 60000, "sigma": 0.8 } }
+```
+
+### Times (race results, speedruns)
+
+Add `"duration": "mm:ss"` or `"duration": "h:mm"` and write the values as
+clock times. They're stored in seconds and shown as clock times. Input accepts
+`25:20`, `1:02:03`, `3h31m`, `25m20s`, or a bare number of minutes. The style
+decides how a two-part time is read: `3:31` is 3 min 31 s with `mm:ss`, and
+3 h 31 min with `h:mm`. Add `"higher_is_better": false` when faster is better.
+
+```json
+{ "name": "5k-time", "type": "percentile", "duration": "mm:ss", "higher_is_better": false,
+  "data": { "18:40": 1, "25:20": 10, "34:37": 50, "50:04": 90 } }
 ```
 
 `data` can also be written as a list of pairs, `[["Iron IV", 0.38], ...]`, if

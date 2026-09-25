@@ -39,3 +39,25 @@ def test_known_conversions():
 def test_unknown_name_suggests():
     with pytest.raises(ra.DistributionError, match="lol-rank"):
         ra.load("lol")
+
+
+def test_published_anchor_points():
+    # RunRepeat: 25:20 is the 10th-fastest percentile, i.e. better than 90%.
+    assert ra.percentile("25:20", "5k-time") == pytest.approx(90)
+    assert ra.percentile("4:26:33", "marathon-time") == pytest.approx(50)
+    assert ra.percentile("4:26", "marathon-time") > 50  # h:mm, slightly faster than median
+    # Dota 2: Immortal = everything above Divine 5's cumulative 95.56%.
+    assert ra.percentile("Immortal", "dota2-rank", position=0) == pytest.approx(95.56)
+    # Rocket League is published as "this rank or higher".
+    assert ra.percentile("SSL", "rocket-league-rank", position=0) == pytest.approx(100 - 0.038)
+    assert ra.percentile("Bronze 1", "rocket-league-rank", position=0) == pytest.approx(0)
+    # R6 labels count down within a tier: Copper 5 is the lowest rank.
+    assert ra.load("r6-rank").labels[0] == "Copper 5"
+
+
+def test_live_stats_are_sane():
+    for name in ("lichess-blitz", "lichess-rapid", "monkeytype-wpm"):
+        d = ra.load(name)
+        assert d.from_percentile(10).value < d.from_percentile(50).value < d.from_percentile(90).value
+    assert 1000 < ra.convert(50, "percentile", "lichess-blitz").target_placement.value < 2000
+    assert 40 < ra.convert(50, "percentile", "monkeytype-wpm").target_placement.value < 120
