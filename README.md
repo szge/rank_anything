@@ -101,10 +101,12 @@ E8          99.45%       Master  (43% of the way through)
 E9          99.9%        Master  (97% of the way through)
 ```
 
-**Any JSON file, no install step:**
+**Any file, no install step.** Pass a `.json` distribution, or a `.csv` /
+`.txt` file containing a list of numbers:
 
 ```bash
 rank-anything convert 97k --from examples/team-salaries.json --to canada-income
+rank-anything convert 97k --from examples/team-salaries.csv --to lol-rank
 ```
 
 **Scripting.** Add `--json` for machine-readable output:
@@ -124,8 +126,9 @@ Numbers can be written the way people usually write them: `85000`, `85,000`,
 | `table -f SRC -t DST` | Map every label of SRC onto DST. For a numeric SRC, the rows are standard percentiles. |
 | `show NAME` | Metadata plus the data table (bands, points, or standard percentiles). |
 | `list` | Every built-in, user-installed and pseudo distribution. |
-| `add FILE [--name N] [--force]` | Validate a JSON file and install it, so it can be used by name. |
-| `validate FILE` | Check a JSON file without installing it. |
+| `import FILE [-c COL] [--unit U] [--lower-is-better] [-o OUT \| --add]` | Turn a `.csv`/`.tsv`/`.txt` of numbers into a JSON distribution, or install it directly with `--add`. |
+| `add FILE [--name N] [--force]` | Validate a distribution (`.json`, or a `.csv`/`.txt` of numbers) and install it, so it can be used by name. |
+| `validate FILE` | Check a distribution file without installing it. |
 | `remove NAME` | Uninstall a user distribution. |
 | `prompt "TOPIC" [--type T]` | Print an AI prompt that returns a distribution as JSON. |
 
@@ -146,8 +149,9 @@ Numbers can be written the way people usually write them: `85000`, `85,000`,
 | `percentile`, `top` | pseudo | "better than X%" and "top X%" |
 
 The `examples/` folder has one file for each input format:
-`team-salaries.json` (samples), `marathon-times.json` (lower is better) and
-`chess-ratings.json` (numeric histogram).
+`team-salaries.json` (samples), `marathon-times.json` (lower is better),
+`chess-ratings.json` (numeric histogram), `team-salaries.csv` (a spreadsheet
+export) and `5k-times.txt` (a plain list of numbers).
 
 ## How it works
 
@@ -262,15 +266,21 @@ next label begins.
 
 ### 3. `samples`: a list of numbers
 
-Give the raw observations. With *n* samples, each one is placed at the middle
-of its 1/*n* share of the population, so the smallest of 10 samples is the 5th
-percentile and the largest is the 95th. Values in between are interpolated, and
-values past the smallest or largest sample follow the fitted tail.
+Give the raw observations. **Order doesn't matter:** the numbers are sorted
+for you, so you can paste them in any order. Duplicates are fine too.
 
 ```json
 { "name": "team-salaries", "type": "samples", "unit": "USD",
-  "data": [68000, 72000, 85000, 91000, 104000, 150000] }
+  "data": [104000, 68000, 150000, 85000, 72000, 91000] }
 ```
+
+With *n* samples, each one is placed at the middle of its 1/*n* share of the
+population, so the smallest of 10 samples is the 5th percentile and the
+largest is the 95th. Values in between are interpolated, and values past the
+smallest or largest sample follow the fitted tail.
+
+If your numbers are in a spreadsheet or text file, you don't need to write
+this JSON by hand. See [From a CSV or text file](#from-a-csv-or-text-file).
 
 ### 4. `normal` / `lognormal`
 
@@ -292,6 +302,60 @@ rank-anything add my-dist.json        # install → usable as `-f my-dist`
 Installed files go to `~/.rank_anything/distributions/`. Set
 `RANK_ANYTHING_HOME` to use a different location. A user distribution with
 the same name as a built-in one takes precedence.
+
+### From a CSV or text file
+
+If you have a pile of raw numbers (a spreadsheet export, a column of survey
+answers, times copied from a results page), use the file as it is. As with
+`samples`, **the order of the numbers doesn't matter.**
+
+**Use it directly.** A `.csv`, `.tsv` or `.txt` path works anywhere a
+distribution name does:
+
+```bash
+rank-anything convert 97k --from examples/team-salaries.csv --to lol-rank
+```
+
+**Or import it** to save it as a named distribution, with a unit and a
+direction:
+
+```console
+$ rank-anything import examples/5k-times.txt --name parkrun --unit min --lower-is-better --add
+Imported 15 values and installed 'parkrun' -> ~/.rank_anything/distributions/parkrun.json
+
+$ rank-anything convert 20 --from parkrun --to lol-rank
+20 min in parkrun
+  = better than 89.3% (top 10.7%)
+  ≈ Emerald III  (70% of the way through) in League of Legends solo queue rank
+```
+
+Leave out `--add` to write `NAME.json` for you to review or edit first. Use
+`-o out.json` to choose the path, or `-o -` to print to stdout.
+
+What the importer accepts:
+
+- **`.txt`**: numbers one per line, or separated by spaces, tabs, commas or
+  semicolons. Lines starting with `#` are comments. Thousands separators such
+  as `85,000` are read as one number.
+- **`.csv` / `.tsv`**: one column of numbers is used. A header row is
+  detected and skipped automatically, as are blank cells. If the file has
+  several numeric columns, choose one with `--column salary` (header name) or
+  `--column 3` (1-based position).
+- **Number formats**: `85000`, `85,000`, `$85,000`, `85k`, `1.2M`, `1.5e3`.
+
+```text
+# examples/5k-times.txt
+24.5 31.2 19.8 27.0 22.1
+35.4, 28.3, 21.7, 26.4, 30.0
+18.9
+```
+
+```text
+# examples/team-salaries.csv: the only numeric column (salary) is picked automatically
+name,team,salary
+Ana,Platform,"$104,000"
+Ben,Platform,"$85,000"
+```
 
 ## Getting distributions from AI tools
 

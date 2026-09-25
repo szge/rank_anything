@@ -20,7 +20,7 @@ listed from WORST/LOWEST to BEST/HIGHEST:
   {"name": "meta-level", "type": "percentile", "percentile_kind": "top",
    "data": {"E3": 100, "E4": 72, "E5": 42, "E6": 15}}""",
     "samples": """\
-"samples" - a raw list of observed numbers:
+"samples" - a raw list of observed numbers, in any order:
   {"name": "team-salaries", "type": "samples", "unit": "USD",
    "data": [72000, 85000, 91000, 104000, 150000]}""",
     "normal": """\

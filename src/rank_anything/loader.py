@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 from importlib import resources
 from pathlib import Path
 from typing import Any, Iterable, Union
@@ -32,6 +31,7 @@ from .core import (
     PiecewiseDistribution,
     parse_number,
 )
+from .importers import IMPORT_SUFFIXES, dump_spec, samples_spec
 
 TYPES = ("frequency", "percentile", "samples", "normal", "lognormal")
 META_KEYS = ("title", "description", "unit", "source", "date")
@@ -129,13 +129,26 @@ def from_dict(spec: dict, default_name: str = "custom") -> Distribution:
     return LabeledDistribution.from_starts(name, nums, **meta)
 
 
-def load_file(path: Union[str, Path]) -> Distribution:
+def read_spec(path: Union[str, Path]) -> dict:
+    """The JSON spec for a file: parsed JSON, or a ``samples`` spec built from a
+    .csv/.tsv/.txt file of numbers."""
     path = Path(path)
+    if not path.exists():
+        raise DistributionError(f"No such file: {path}")
+    if path.suffix.lower() in IMPORT_SUFFIXES:
+        return samples_spec(path)
     try:
         spec = json.loads(path.read_text())
     except json.JSONDecodeError as e:
         raise DistributionError(f"{path}: invalid JSON ({e})") from e
-    return from_dict(spec, default_name=path.stem)
+    if isinstance(spec, dict):
+        spec.setdefault("name", path.stem)
+    return spec
+
+
+def load_file(path: Union[str, Path]) -> Distribution:
+    """Load a .json distribution, or a .csv/.tsv/.txt file of numbers."""
+    return from_dict(read_spec(path), default_name=Path(path).stem)
 
 
 def _builtin_files() -> dict[str, Any]:
@@ -181,9 +194,7 @@ def load(ref: Union[str, Path, Distribution]) -> Distribution:
         return from_dict(spec, default_name=ref)
     if ref in PSEUDO:
         return PSEUDO[ref]()
-    if ref.endswith(".json") or os.path.sep in ref:
-        if not Path(ref).exists():
-            raise DistributionError(f"No such file: {ref}")
+    if ref.lower().endswith((".json",) + IMPORT_SUFFIXES) or os.path.sep in ref:
         return load_file(ref)
     names = available()
     close = [n for n in names if ref.lower() in n.lower()]
@@ -191,13 +202,17 @@ def load(ref: Union[str, Path, Distribution]) -> Distribution:
     raise DistributionError(f"Unknown distribution {ref!r}.{hint}")
 
 
-def install(path: Union[str, Path], name: str | None = None, force: bool = False) -> Path:
-    """Validate a JSON file and copy it into the user directory."""
-    dist = load_file(path)
-    name = name or dist.name
-    dest = user_dir() / f"{name}.json"
+def install(path: Union[str, Path], name: str | None = None, force: bool = False,
+            spec: dict | None = None) -> Path:
+    """Validate a distribution file (or an already-built ``spec``) and save it
+    as JSON in the user directory, so it can be used by name."""
+    spec = dict(spec) if spec is not None else read_spec(path)
+    if name:
+        spec["name"] = name
+    dist = from_dict(spec, default_name=Path(path).stem)  # validates
+    dest = user_dir() / f"{dist.name}.json"
     if dest.exists() and not force:
         raise DistributionError(f"{dest} already exists (use --force to overwrite)")
     dest.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(path, dest)
+    dest.write_text(dump_spec(spec))
     return dest

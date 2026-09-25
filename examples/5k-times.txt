@@ -1,0 +1,6 @@
+# Parkrun 5k finish times in minutes (illustrative). Order doesn't matter.
+24.5 31.2 19.8 27.0 22.1
+35.4, 28.3, 21.7, 26.4, 30.0
+18.9
+33.1
+25.6 23.3 29.8

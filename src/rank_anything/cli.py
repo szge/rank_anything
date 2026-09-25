@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 from typing import Optional, Sequence
 
 from . import __version__
@@ -19,6 +20,7 @@ from .core import (
     convert,
     format_percent as fmt_pct,
 )
+from .importers import dump_spec, samples_spec
 from .loader import available, install, load, load_file, user_dir
 from .prompts import PROMPT_TYPES, build_prompt
 
@@ -33,6 +35,8 @@ examples:
   rank-anything table --from meta-level --to lol-rank
   rank-anything show lol-rank
   rank-anything add my-dist.json
+  rank-anything convert 97k --from salaries.csv --to lol-rank  # CSV/TXT of numbers works directly
+  rank-anything import salaries.csv --column salary --unit USD --add
   rank-anything prompt "Chess.com rapid ratings" --type frequency
 """
 
@@ -195,6 +199,30 @@ def cmd_add(args) -> int:
     return 0
 
 
+def cmd_import(args) -> int:
+    spec = samples_spec(
+        args.file, column=args.column, name=args.name, title=args.title, unit=args.unit,
+        higher_is_better=not args.lower_is_better,
+    )
+    n = len(spec["data"])
+    if args.add:
+        dest = install(args.file, spec=spec, force=args.force)
+        print(f"Imported {n} values and installed {spec['name']!r} -> {dest}")
+        print(f"Try: rank-anything show {spec['name']}")
+        return 0
+    text = dump_spec(spec)
+    if args.output == "-":
+        sys.stdout.write(text)
+        return 0
+    out = Path(args.output or f"{spec['name']}.json")
+    if out.exists() and not args.force:
+        raise DistributionError(f"{out} already exists (use --force to overwrite, or -o to pick a path)")
+    out.write_text(text)
+    print(f"Imported {n} values -> {out}")
+    print(f"Try: rank-anything show {out}    or install it: rank-anything add {out}")
+    return 0
+
+
 def cmd_remove(args) -> int:
     path = user_dir() / f"{args.name}.json"
     if not path.exists():
@@ -226,7 +254,8 @@ def build_parser() -> argparse.ArgumentParser:
     c = sub.add_parser("convert", aliases=["c"], help="convert a value between distributions")
     c.add_argument("value", help="value to convert, e.g. 85000, 85k, 'Gold II', E5")
     c.add_argument("-f", "--from", dest="source", required=True,
-                   help="source distribution name or JSON file ('percentile' and 'top' also work)")
+                   help="source: a distribution name, a .json file, or a .csv/.txt of numbers "
+                        "('percentile' and 'top' also work)")
     c.add_argument("-t", "--to", dest="targets", action="append",
                    help="target distribution (repeatable). Omit to compare against all.")
     c.add_argument("-p", "--position", type=float, default=0.5,
@@ -247,17 +276,32 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("-t", "--to", dest="target", required=True)
     s.set_defaults(func=cmd_table)
 
-    s = sub.add_parser("add", help="validate a JSON distribution and install it for later use")
+    s = sub.add_parser("add", help="validate a distribution (.json, or .csv/.txt of numbers) and install it")
     s.add_argument("file")
     s.add_argument("--name", help="install under this name (default: the file's 'name')")
     s.add_argument("--force", action="store_true", help="overwrite an existing one")
     s.set_defaults(func=cmd_add)
 
+    s = sub.add_parser("import", help="turn a .csv/.tsv/.txt of numbers into a JSON distribution")
+    s.add_argument("file", help=".csv/.tsv (one column of numbers) or .txt (numbers separated by "
+                                "newlines, spaces or commas)")
+    s.add_argument("-c", "--column", help="CSV column to use: header name or 1-based index "
+                                          "(default: the only numeric column)")
+    s.add_argument("--name", help="distribution name (default: from the file name)")
+    s.add_argument("--title", help="human-readable title")
+    s.add_argument("--unit", help="unit label, e.g. USD or cm")
+    s.add_argument("--lower-is-better", action="store_true",
+                   help="smaller numbers rank higher (e.g. race times)")
+    s.add_argument("-o", "--output", help="where to write the JSON (default: NAME.json; '-' for stdout)")
+    s.add_argument("--add", action="store_true", help="install it directly instead of writing a file")
+    s.add_argument("--force", action="store_true", help="overwrite existing files")
+    s.set_defaults(func=cmd_import)
+
     s = sub.add_parser("remove", aliases=["rm"], help="remove a user-installed distribution")
     s.add_argument("name")
     s.set_defaults(func=cmd_remove)
 
-    s = sub.add_parser("validate", help="check a JSON distribution file without installing it")
+    s = sub.add_parser("validate", help="check a distribution file without installing it")
     s.add_argument("file")
     s.set_defaults(func=cmd_validate)
 
