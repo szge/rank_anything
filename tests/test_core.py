@@ -148,3 +148,24 @@ def test_loglog_interpolation_follows_power_law_in_upper_half():
         assert log.to_percentile(x).percentile == pytest.approx(lin.to_percentile(x).percentile)
     with pytest.raises(DistributionError):
         PiecewiseDistribution("x", pts, interpolation="cubic")
+
+
+def test_parse_and_format_duration():
+    from rank_anything.core import format_duration, parse_duration
+    assert parse_duration("25:20") == 25 * 60 + 20
+    assert parse_duration("3:31", "h:mm") == 3 * 3600 + 31 * 60
+    assert parse_duration("3:31:46") == parse_duration("3:31:46", "h:mm") == 12706
+    assert parse_duration("3h31m") == 12660 and parse_duration("25m20s") == 1520
+    assert parse_duration("25") == 1500  # bare number = minutes
+    assert format_duration(1520) == "25:20" and format_duration(12706) == "3:31:46"
+    with pytest.raises(DistributionError):
+        parse_duration("fast")
+
+
+def test_duration_distribution_from_dict():
+    d = from_dict({"type": "percentile", "duration": "h:mm", "higher_is_better": False,
+                   "data": {"3:00": 10, "4:00": 50, "5:00": 90}})
+    assert d.to_percentile("3:30").percentile == pytest.approx(70)  # faster = better
+    assert d.format_value(d.from_percentile(70).value) == "3:30:00"
+    with pytest.raises(DistributionError):
+        from_dict({"type": "normal", "duration": "hours", "data": {"mean": 1, "std": 1}})

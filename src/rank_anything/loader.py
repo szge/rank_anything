@@ -11,7 +11,8 @@ JSON format (see README for full details)::
       "higher_is_better": true,          # numeric only
       "percentile_kind": "below" | "top", # "percentile" type only
       "tail": "auto" | "pareto" | "exponential" | "clamp",  # numeric point data only
-      "interpolation": "linear" | "loglog"                 # numeric point data only
+      "interpolation": "linear" | "loglog",                # numeric point data only
+      "duration": "mm:ss" | "h:mm"   # values are times, e.g. "25:20" (see README)
     }
 """
 
@@ -30,6 +31,8 @@ from .core import (
     LogNormalDistribution,
     NormalDistribution,
     PiecewiseDistribution,
+    DURATION_STYLES,
+    parse_duration,
     parse_number,
 )
 from .importers import IMPORT_SUFFIXES, dump_spec, samples_spec
@@ -67,10 +70,11 @@ def _pairs(data: Any, what: str) -> list[tuple[str, Any]]:
     raise DistributionError(f"{what}: 'data' must be an object or a list of pairs")
 
 
-def _all_numeric(keys: Iterable[str]) -> bool:
+def _all_numeric(keys: Iterable[str], parse=None) -> bool:
+    parse = parse or parse_number
     try:
         for k in keys:
-            parse_number(k)
+            parse(k)
         return True
     except DistributionError:
         return False
@@ -85,6 +89,15 @@ def from_dict(spec: dict, default_name: str = "custom") -> Distribution:
         raise DistributionError(f"{name}: 'type' must be one of {', '.join(TYPES)} (got {dtype!r})")
     meta = {k: str(spec[k]) for k in META_KEYS if spec.get(k) is not None}
     meta["higher_is_better"] = bool(spec.get("higher_is_better", True))
+    duration = spec.get("duration")
+    if duration is not None:
+        if duration not in DURATION_STYLES:
+            raise DistributionError(
+                f"{name}: 'duration' must be one of {', '.join(DURATION_STYLES)}"
+            )
+        meta["duration"] = duration
+    # Numeric keys/values: clock times for duration distributions, else numbers.
+    num = (lambda v: parse_duration(v, duration)) if duration else parse_number
     data = spec.get("data")
     # How to extend numeric point data past its outermost known values.
     tail = {"tail": str(spec.get("tail", "auto")),
@@ -94,7 +107,7 @@ def from_dict(spec: dict, default_name: str = "custom") -> Distribution:
         if not isinstance(data, list):
             raise DistributionError(f"{name}: 'samples' data must be a list of numbers")
         return PiecewiseDistribution.from_samples(
-            name, [parse_number(v) for v in data], **tail, **meta
+            name, [num(v) for v in data], **tail, **meta
         )
 
     if dtype == "normal":
@@ -109,14 +122,15 @@ def from_dict(spec: dict, default_name: str = "custom") -> Distribution:
     if not pairs:
         raise DistributionError(f"{name}: 'data' is empty")
     nums = [(k, float(v)) for k, v in pairs]
-    numeric_keys = _all_numeric(k for k, _ in nums) and not spec.get("labels_are_categories")
+    numeric_keys = _all_numeric((k for k, _ in nums), num) and not spec.get("labels_are_categories")
 
     if dtype == "frequency":
         if numeric_keys:
             return PiecewiseDistribution.from_weighted(
-                name, [(parse_number(k), f) for k, f in nums], **tail, **meta
+                name, [(num(k), f) for k, f in nums], **tail, **meta
             )
         meta.pop("higher_is_better")
+        meta.pop("duration", None)
         return LabeledDistribution.from_frequencies(name, nums, **meta)
 
     # dtype == "percentile"
@@ -126,8 +140,9 @@ def from_dict(spec: dict, default_name: str = "custom") -> Distribution:
     if kind == "top":
         nums = [(k, 100.0 - p) for k, p in nums]
     if numeric_keys:
-        return PiecewiseDistribution(name, [(parse_number(k), p) for k, p in nums], **tail, **meta)
+        return PiecewiseDistribution(name, [(num(k), p) for k, p in nums], **tail, **meta)
     meta.pop("higher_is_better")
+    meta.pop("duration", None)
     return LabeledDistribution.from_starts(name, nums, **meta)
 
 

@@ -78,6 +78,9 @@ class Distribution:
     source: str = ""
     date: str = ""
     higher_is_better: bool = True
+    # Numeric only: values are durations in seconds, entered/shown as clock
+    # times. "mm:ss" or "h:mm" says how a two-part time like "3:31" is read.
+    duration: str = ""
     kind: ClassVar[str] = ""
 
     def to_percentile(self, value: Value, position: float = 0.5) -> Placement:
@@ -112,6 +115,43 @@ def parse_number(raw: Union[str, float, int]) -> float:
     if not m:
         raise DistributionError(f"Could not parse a number from {raw!r}")
     return float(m.group(1)) * _SUFFIXES.get(m.group(2) or "", 1.0)
+
+
+DURATION_STYLES = ("mm:ss", "h:mm")
+
+
+def parse_duration(raw: Union[str, float, int], style: str = "mm:ss") -> float:
+    """Parse a duration to seconds: '1:02:03', '25:20' (mm:ss, or h:mm when
+    ``style`` is 'h:mm'), '3h31m', '25m20s', or a plain number of minutes."""
+    if isinstance(raw, (int, float)):
+        return float(raw) * 60
+    s = raw.strip().lower().replace(" ", "")
+    if ":" in s:
+        parts = s.split(":")
+        try:
+            nums = [float(x) for x in parts]
+        except ValueError:
+            raise DistributionError(f"Could not parse a time from {raw!r}") from None
+        if len(nums) == 3:
+            h, m, sec = nums
+        elif len(nums) == 2:
+            h, m, sec = (nums[0], nums[1], 0.0) if style == "h:mm" else (0.0, nums[0], nums[1])
+        else:
+            raise DistributionError(f"Could not parse a time from {raw!r}")
+        return h * 3600 + m * 60 + sec
+    m = re.fullmatch(r"(?:(\d+(?:\.\d+)?)h)?(?:(\d+(?:\.\d+)?)m(?:in)?)?(?:(\d+(?:\.\d+)?)s)?", s)
+    if m and any(m.groups()):
+        h, mi, sec = (float(g) if g else 0.0 for g in m.groups())
+        return h * 3600 + mi * 60 + sec
+    return parse_number(s) * 60  # bare number = minutes
+
+
+def format_duration(seconds: float) -> str:
+    total = int(round(seconds))
+    sign = "-" if total < 0 else ""
+    h, rem = divmod(abs(total), 3600)
+    m, sec = divmod(rem, 60)
+    return f"{sign}{h}:{m:02d}:{sec:02d}" if h else f"{sign}{m}:{sec:02d}"
 
 
 def format_percent(p: float) -> str:
@@ -152,9 +192,13 @@ class NumericDistribution(Distribution):
         raise NotImplementedError
 
     def parse_value(self, raw) -> float:
+        if self.duration:
+            return parse_duration(raw, self.duration)
         return parse_number(raw)
 
     def format_value(self, value) -> str:
+        if self.duration:
+            return format_duration(float(value))
         if self.unit == "%":
             return format_percent(float(value))
         s = _fmt_number(float(value))
