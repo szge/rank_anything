@@ -142,6 +142,7 @@ Numbers can be written the way people usually write them: `85000`, `85,000`,
 | `lol-rank` | labeled (Iron IV … Challenger) | [Esports Tales](https://www.esportstales.com/league-of-legends/rank-distribution-percentage-of-players-by-tier), Aug 2026, all regions |
 | `valorant-rank` | labeled (Iron 1 … Radiant) | [Esports Tales](https://www.esportstales.com/valorant/rank-distribution-and-percentage-of-players-by-tier), V26 Act 5 |
 | `canada-income` | numeric, CAD | [Statistics Canada](https://www150.statcan.gc.ca/n1/daily-quotidien/251031/dq251031b-eng.htm) 2023 top-1%/0.1%/0.01% cutoffs; lower percentiles are approximate |
+| `us-salary` | numeric, USD/yr | [BLS Usual Weekly Earnings](https://www.bls.gov/news.release/wkyeng.t05.htm), full-time workers, Q2 2026 (weekly × 52); above the 90th percentile it's extrapolated |
 | `meta-level` | labeled (E3 … E9) | **rough community estimate** (not official) |
 | `sat-score` | numeric, 400–1600 | College Board SAT User Percentiles (via [Larry Learns](https://www.larrylearns.com/blog/sat-percentiles)) |
 | `iq` | normal(100, 15) | Standard test norming |

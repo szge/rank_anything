@@ -22,6 +22,9 @@ def test_known_conversions():
     assert ra.convert("Challenger", "lol-rank", "valorant-rank").target_placement.value == "Radiant"
     assert ra.convert(3_487_600, "canada-income", "percentile").target_placement.value == pytest.approx(99.99)
     assert ra.convert("E3", "meta-level", "meta-level").target_placement.value == "E3"
+    assert ra.percentile("65,052", "us-salary") == pytest.approx(50)
+    assert ra.percentile("$120k", "us-salary") == pytest.approx(80.84, abs=0.01)  # interpolated
+    assert ra.percentile("1M", "us-salary") > ra.percentile("500k", "us-salary") > 99
 
 
 def test_unknown_name_suggests():

@@ -1,0 +1,17 @@
+{
+  "name": "us-salary",
+  "title": "US full-time salary (USD/yr, before tax)",
+  "description": "Usual earnings of full-time wage and salary workers aged 16+, Q2 2026 (120.9M workers). BLS publishes weekly figures; annual = weekly x 52. Covers the 10th-90th percentiles; values outside that range use a fitted Pareto tail, so treat very high salaries as estimates.",
+  "type": "percentile",
+  "percentile_kind": "below",
+  "unit": "USD",
+  "source": "https://www.bls.gov/news.release/wkyeng.t05.htm (BLS Usual Weekly Earnings, Table 5)",
+  "date": "2026-Q2",
+  "data": {
+    "33384": 10,
+    "44200": 25,
+    "65052": 50,
+    "99580": 75,
+    "152048": 90
+  }
+}
