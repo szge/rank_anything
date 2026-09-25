@@ -1,17 +1,25 @@
 {
   "name": "us-salary",
   "title": "US full-time salary (USD/yr, before tax)",
-  "description": "Usual earnings of full-time wage and salary workers aged 16+, Q2 2026 (120.9M workers). BLS publishes weekly figures; annual = weekly x 52. Covers the 10th-90th percentiles; values outside that range use a fitted Pareto tail, so treat very high salaries as estimates.",
+  "description": "Annual earnings of full-time US wage and salary workers. 10th-90th percentiles: BLS usual weekly earnings, Q2 2026 (x52). Above ~$250k: IRS W-2 wage brackets (tax year 2020, up to $10M+) as a share of full-time workers, scaled to 2026 wage levels. See scripts/build_us_salary.py.",
   "type": "percentile",
   "percentile_kind": "below",
+  "interpolation": "loglog",
   "unit": "USD",
-  "source": "https://www.bls.gov/news.release/wkyeng.t05.htm (BLS Usual Weekly Earnings, Table 5)",
-  "date": "2026-Q2",
+  "source": "https://www.bls.gov/news.release/wkyeng.t05.htm ; https://www.irs.gov/statistics/soi-tax-stats-individual-information-return-form-w2-statistics",
+  "date": "2026-Q2 (top end: 2020 scaled to 2026)",
   "data": {
     "33384": 10,
     "44200": 25,
     "65052": 50,
     "99580": 75,
-    "152048": 90
+    "152048": 90,
+    "252000": 96.55377,
+    "629900": 99.4378,
+    "1259800": 99.85313,
+    "1889700": 99.92667,
+    "2519600": 99.95311,
+    "6299000": 99.9885,
+    "12598000": 99.99613
   }
 }

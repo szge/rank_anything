@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 import rank_anything as ra
@@ -23,7 +25,11 @@ def test_known_conversions():
     assert ra.convert(3_487_600, "canada-income", "percentile").target_placement.value == pytest.approx(99.99)
     assert ra.convert("E3", "meta-level", "meta-level").target_placement.value == "E3"
     assert ra.percentile("65,052", "us-salary") == pytest.approx(50)
-    assert ra.percentile("$120k", "us-salary") == pytest.approx(80.84, abs=0.01)  # interpolated
+    # Between the BLS 75th/90th points, the share above follows a power law.
+    a = math.log(25 / 10) / math.log(152048 / 99580)
+    assert ra.percentile("$120k", "us-salary") == pytest.approx(100 - 25 * (120000 / 99580) ** -a)
+    # IRS-derived top-end anchor: $1M+ in 2020 dollars, scaled to 2026.
+    assert ra.percentile("1,259,800", "us-salary") == pytest.approx(99.85313)
     assert ra.percentile("1M", "us-salary") > ra.percentile("500k", "us-salary") > 99
 
 

@@ -142,7 +142,7 @@ Numbers can be written the way people usually write them: `85000`, `85,000`,
 | `lol-rank` | labeled (Iron IV … Challenger) | [Esports Tales](https://www.esportstales.com/league-of-legends/rank-distribution-percentage-of-players-by-tier), Aug 2026, all regions |
 | `valorant-rank` | labeled (Iron 1 … Radiant) | [Esports Tales](https://www.esportstales.com/valorant/rank-distribution-and-percentage-of-players-by-tier), V26 Act 5 |
 | `canada-income` | numeric, CAD | [Statistics Canada](https://www150.statcan.gc.ca/n1/daily-quotidien/251031/dq251031b-eng.htm) 2023 top-1%/0.1%/0.01% cutoffs; lower percentiles are approximate |
-| `us-salary` | numeric, USD/yr | [BLS Usual Weekly Earnings](https://www.bls.gov/news.release/wkyeng.t05.htm), full-time workers, Q2 2026 (weekly × 52); above the 90th percentile it's extrapolated |
+| `us-salary` | numeric, USD/yr | Full-time workers. 10th–90th percentile: [BLS Usual Weekly Earnings](https://www.bls.gov/news.release/wkyeng.t05.htm), Q2 2026 (weekly × 52). Above ~$250k: [IRS W-2 wage brackets](https://www.irs.gov/statistics/soi-tax-stats-individual-information-return-form-w2-statistics) up to $10M+ (2020, scaled to 2026 wages). Method: `scripts/build_us_salary.py` |
 | `meta-level` | labeled (E3 … E9) | **rough community estimate** (not official) |
 | `sat-score` | numeric, 400–1600 | College Board SAT User Percentiles (via [Larry Learns](https://www.larrylearns.com/blog/sat-percentiles)) |
 | `iq` | normal(100, 15) | Standard test norming |
@@ -204,6 +204,16 @@ Which tail is used depends on the data (the `"tail"` field in the JSON):
 | `exponential` | the share beyond *x* falls off exponentially with distance | values can be zero or negative |
 | `clamp` | pinned to the endpoint | an endpoint is at 0% or 100%, which marks a hard limit (e.g. SAT 1600) |
 
+### Sparse top-end data: `"interpolation": "loglog"`
+
+Income-like data often has only a few widely spaced points near the top, for
+example $252k (top 3.4%) and $630k (top 0.56%). A straight line between two
+such points overstates the values in between: it puts the top-1% cutoff at
+~$572k instead of ~$471k. Setting `"interpolation": "loglog"` makes every
+segment above the median follow the power law through its two endpoints (the
+same Pareto shape used for the tail). Segments below the median stay linear.
+`us-salary` uses this setting.
+
 Clamped results are marked `[outside known range, clamped]` and extrapolated
 ones `[beyond known data, extrapolated]`. Extrapolated results are estimates:
 the further they are from the data, the less reliable they get.
@@ -224,7 +234,8 @@ and `data` holds the numbers.
   "source": "https://...",
   "date": "2026",
   "higher_is_better": true,       // numeric only: set false for e.g. race times
-  "tail": "auto"                  // numeric points only: auto | pareto | exponential | clamp
+  "tail": "auto",                 // numeric points only: auto | pareto | exponential | clamp
+  "interpolation": "linear"       // numeric points only: linear | loglog (see below)
 }
 ```
 

@@ -10,7 +10,8 @@ JSON format (see README for full details)::
       "unit": "CAD", "source": "...", "date": "...", "description": "...",
       "higher_is_better": true,          # numeric only
       "percentile_kind": "below" | "top", # "percentile" type only
-      "tail": "auto" | "pareto" | "exponential" | "clamp"  # numeric point data only
+      "tail": "auto" | "pareto" | "exponential" | "clamp",  # numeric point data only
+      "interpolation": "linear" | "loglog"                 # numeric point data only
     }
 """
 
@@ -86,7 +87,8 @@ def from_dict(spec: dict, default_name: str = "custom") -> Distribution:
     meta["higher_is_better"] = bool(spec.get("higher_is_better", True))
     data = spec.get("data")
     # How to extend numeric point data past its outermost known values.
-    tail = {"tail": str(spec.get("tail", "auto"))}
+    tail = {"tail": str(spec.get("tail", "auto")),
+            "interpolation": str(spec.get("interpolation", "linear"))}
 
     if dtype == "samples":
         if not isinstance(data, list):

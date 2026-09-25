@@ -217,6 +217,7 @@ class _Tail:
 
 
 TAIL_KINDS = ("auto", "pareto", "exponential", "clamp")
+INTERPOLATIONS = ("linear", "loglog")
 
 
 class PiecewiseDistribution(NumericDistribution):
@@ -224,8 +225,14 @@ class PiecewiseDistribution(NumericDistribution):
     Values between points are linearly interpolated; values beyond the
     outermost points follow a fitted tail (see :class:`_Tail`)."""
 
-    def __init__(self, name: str, points: Sequence[tuple[float, float]], tail: str = "auto", **meta):
+    def __init__(self, name: str, points: Sequence[tuple[float, float]], tail: str = "auto",
+                 interpolation: str = "linear", **meta):
         super().__init__(name, **meta)
+        if interpolation not in INTERPOLATIONS:
+            raise DistributionError(
+                f"{name}: 'interpolation' must be one of {', '.join(INTERPOLATIONS)}"
+            )
+        self.interpolation = interpolation
         if len(points) < 2:
             raise DistributionError(f"{name}: need at least 2 points to interpolate")
         if tail not in TAIL_KINDS:
@@ -244,8 +251,29 @@ class PiecewiseDistribution(NumericDistribution):
             raise DistributionError(f"{name}: all points have the same percentile")
         self.xs, self.ps = xs, ps
         self.tail = tail
+        # Segments interpolated as a power law instead of a straight line.
+        self._power = [
+            interpolation == "loglog" and self._power_ok(i) for i in range(len(xs) - 1)
+        ]
         self.upper_tail = self._fit_tail(upper=True)
         self.lower_tail = self._fit_tail(upper=False)
+
+    def _power_ok(self, i: int) -> bool:
+        """``loglog`` applies to upper-half segments with positive values and
+        a shrinking, non-zero share above (the Pareto-like part of the data)."""
+        x0, x1, p0, p1 = self.xs[i], self.xs[i + 1], self.ps[i], self.ps[i + 1]
+        return p0 >= 50 and x0 > 0 and x1 > x0 and 100 - p1 > 0 and p1 > p0
+
+    def _power_cdf(self, i: int, x: float) -> float:
+        """Share above x follows m0 * (x/x0)^-a through segment i's endpoints."""
+        x0, x1, m0, m1 = self.xs[i], self.xs[i + 1], 100 - self.ps[i], 100 - self.ps[i + 1]
+        a = math.log(m0 / m1) / math.log(x1 / x0)
+        return 100.0 - m0 * (x / x0) ** -a
+
+    def _power_ppf(self, i: int, p: float) -> float:
+        x0, x1, m0, m1 = self.xs[i], self.xs[i + 1], 100 - self.ps[i], 100 - self.ps[i + 1]
+        a = math.log(m0 / m1) / math.log(x1 / x0)
+        return x0 * ((100 - p) / m0) ** (-1 / a)
 
     def _fit_tail(self, upper: bool) -> Optional[_Tail]:
         if self.tail == "clamp":
@@ -276,6 +304,9 @@ class PiecewiseDistribution(NumericDistribution):
             if self.upper_tail:
                 return 100.0 - self.upper_tail.mass(x), "extrapolated"
             return self.ps[-1], "clamped"
+        i = bisect.bisect_left(self.xs, x) - 1
+        if 0 <= i < len(self._power) and self._power[i] and self.xs[i] < x:
+            return self._power_cdf(i, x), ""
         return _interp(x, self.xs, self.ps), ""
 
     def ppf(self, p: float) -> tuple[float, str]:
@@ -287,6 +318,9 @@ class PiecewiseDistribution(NumericDistribution):
             if self.upper_tail and p < 100:
                 return self.upper_tail.value(100.0 - p), "extrapolated"
             return self.xs[-1], "clamped"
+        i = bisect.bisect_left(self.ps, p) - 1
+        if 0 <= i < len(self._power) and self._power[i] and self.ps[i] < p:
+            return self._power_ppf(i, p), ""
         return _interp(p, self.ps, self.xs), ""
 
     @classmethod

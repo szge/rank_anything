@@ -133,3 +133,18 @@ def test_from_dict_rejects_bad_input():
         from_dict({"type": "nope", "data": []})
     with pytest.raises(DistributionError):
         from_dict({"type": "percentile", "data": {"10": 50, "20": 40}})
+
+
+def test_loglog_interpolation_follows_power_law_in_upper_half():
+    # Exact Pareto with a=2: share above x = 10% * (x/100)^-2.
+    pts = [(10, 0), (50, 40), (100, 90), (1000, 99.9)]
+    lin = PiecewiseDistribution("lin", pts)
+    log = PiecewiseDistribution("log", pts, interpolation="loglog")
+    assert log.to_percentile(300).percentile == pytest.approx(100 - 10 / 9)
+    assert lin.to_percentile(300).percentile == pytest.approx(92.2)  # a straight line badly understates it
+    assert log.from_percentile(99).value == pytest.approx(100 * 10 ** 0.5)
+    # Lower half and exact points are unchanged.
+    for x in (30, 50, 100, 1000):
+        assert log.to_percentile(x).percentile == pytest.approx(lin.to_percentile(x).percentile)
+    with pytest.raises(DistributionError):
+        PiecewiseDistribution("x", pts, interpolation="cubic")
